@@ -65,10 +65,11 @@ function messageReceived(message) {
 	let lower = message.content.toLowerCase();
 	let words = lower.split(regex.punctSpace).filter(x => x);
 
-	if (config.debug && !secrets.channels[channel.name]) return;//!secrets.admins[user.username]) return;
+	if (config.debug && !secrets.channels[channel.name]) return; //!secrets.admins[user.username]) return;
 
 	// if I haven't seen this user before, add them to my database
-	db.collection('users')
+	db
+		.collection('users')
 		.doc(user.id)
 		.set({ name: user.username });
 
@@ -107,10 +108,7 @@ function messageReceived(message) {
 	if (groups && groups.length >= 3) {
 		let item = groups[2];
 
-		let invRef = db.collection('items');
-		invRef.get().then(snapshot => {
-			let inventory = snapshot.docs.map(x => x.data());
-
+		getInventory().then(inventory => {
 			if (inventory.some(x => x.name === item)) {
 				channel.send("No thanks, I've already got that");
 			} else {
@@ -120,7 +118,9 @@ function messageReceived(message) {
 				}
 
 				let str;
-				let giveStr = give ? `${getRandomInt(0, 1) === 0 ? 'drops' : `gives ${user.username}`} ${give.name} and ` : '';
+				let giveStr = give
+					? `${getRandomInt(0, 1) === 0 ? 'drops' : `gives ${user.username}`} ${give.name} and `
+					: '';
 				switch (getRandomInt(0, 2)) {
 					case 0:
 						str = '*' + giveStr + `now contains ${item}*`;
@@ -135,9 +135,12 @@ function messageReceived(message) {
 				channel.send(str);
 				expUp(message, (sayAnything = true), (largeGain = false));
 
-				db.collection('items').doc(item).set({ name: item, user: { id: user.id, username: user.username } });
+				db
+					.collection('items')
+					.doc(item)
+					.set({ name: item, user: { id: user.id, username: user.username } });
 			}
-		})
+		});
 
 		if (config.debug) return;
 	}
@@ -241,42 +244,23 @@ function mentionedBy(message) {
 	let user = message.author;
 	let channel = message.channel;
 	let lower = message.content.toLowerCase();
-	if (lower.startsWith("bucket") || lower.startsWith(`<@${client.user.id}>`))
-		lower = lower.substring(lower.indexOf(' ') + 1)
-	else
-		lower = lower.substring(0, lower.lastIndexOf(", bucket"));
+	if (lower.startsWith('bucket') || lower.startsWith(`<@${client.user.id}>`))
+		lower = lower.substring(lower.indexOf(' ') + 1);
+	else lower = lower.substring(0, lower.lastIndexOf(', bucket'));
 
 	let words = lower.split(regex.punctSpace).filter(x => x);
 
 	if (lower === 'inventory?' && secrets.admins[user.username]) {
-		/*
-            Log("listing inventory");
-            StringBuilder sb = new StringBuilder();
-            List<Inventory> i = (from inv in Bucket.Inventory
-                                    select inv).ToList();
-            foreach (Inventory item in i)
-            {
-                if (item.item.StartsWith("his") || item.item.StartsWith("her"))
-                    sb.Append($"{item.username}'s {item.item.Substring(4)}");
-                else
-                    sb.Append(item.item + ", ");
-            }
-            channel.send($"*contains {sb.ToString().Substring(0, sb.ToString().Length - 2)}*");
-        */
 		var out = '';
-		var invRef = db.collection('items');
-		var allInv = invRef.get()
-			.then(snapshot => {
-				snapshot.forEach(item => {
-					let data = item.data();
-					if (data.name.startsWith('his') || data.name.startsWith('her'))
-						out += `${data.user.username}'s ${data.name.substring(4)}, `;
-					else
-						out += data.name + ', ';
-				});
-				out = out === '' ? "I don't have anything :(" : out;
-				channel.send(out);
+		getInventory().then(inventory => {
+			inventory.forEach(item => {
+				if (item.name.startsWith('his') || item.name.startsWith('her'))
+					out += `${item.user.username}'s ${item.name.substring(4)}, `;
+				else out += item.name + ', ';
 			});
+			out = out === '' ? "I don't have anything :(" : out.substring(0, out.length - 2);
+			channel.send(out);
+		});
 		return;
 	}
 
@@ -416,8 +400,13 @@ function learn(words) {
 	let len = words.length - 2;
 
 	for (let i = 0; i < len; i++) {
-		let docRef = db.collection('words').doc(words[i]).collection(words[i + 1]).doc(words[i + 2]);
-		docRef.get()
+		let docRef = db
+			.collection('words')
+			.doc(words[i])
+			.collection(words[i + 1])
+			.doc(words[i + 2]);
+		docRef
+			.get()
 			.then(doc => {
 				if (!doc.exists) {
 					docRef.set({ count: 1 });
@@ -431,13 +420,22 @@ function learn(words) {
 	}
 }
 
-function expUp(sourceMessage, sayAnything = true, largeGain = false) { }
+function expUp(sourceMessage, sayAnything = true, largeGain = false) {}
 
-function expDown(sourceMessage, sayAnything = true, largeLoss = false) { }
+function expDown(sourceMessage, sayAnything = true, largeLoss = false) {}
 
-function processFactoid(factoid, message) { }
+function processFactoid(factoid, message) {}
 
-function syllableCount(words) { }
+function syllableCount(words) {}
+
+function getInventory() {
+	return new Promise((resolve, reject) => {
+		let invRef = db.collection('items');
+		invRef.get().then(snapshot => {
+			resolve(snapshot.docs.map(x => x.data()));
+		});
+	});
+}
 
 /**
  * Returns a random integer between min (inclusive) and max (inclusive).

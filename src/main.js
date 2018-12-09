@@ -59,7 +59,7 @@ var state = {
 	silenced: false,
 };
 
-function messageReceived(message) {
+async function messageReceived(message) {
 	let user = message.author;
 	let channel = message.channel;
 	let lower = message.content.toLowerCase();
@@ -108,41 +108,38 @@ function messageReceived(message) {
 	if (groups && groups.length >= 3) {
 		let item = groups[2];
 
-		getInventory().then(inventory => {
-			if (inventory.some(x => x.name === item)) {
-				channel.send("No thanks, I've already got that");
-			} else {
-				let give;
-				if (inventory.length >= config.inventorySize) {
-					give = getRandomElement(inventory);
-				}
-
-				let str;
-				let giveStr = give
-					? `${getRandomInt(0, 1) === 0 ? 'drops' : `gives ${user.username}`} ${give.name} and `
-					: '';
-				switch (getRandomInt(0, 2)) {
-					case 0:
-						str = '*' + giveStr + `now contains ${item}*`;
-						break;
-					case 1:
-						str = '*' + giveStr + `is now carrying ${item}*`;
-						break;
-					case 2:
-						str = '*' + giveStr + `is now holding ${item}*`;
-						break;
-				}
-				channel.send(str);
-				expUp(message, (sayAnything = true), (largeGain = false));
-
-				db
-					.collection('items')
-					.doc(item)
-					.set({ name: item, user: { id: user.id, username: user.username } });
+		let inventory = await getInventory();
+		if (inventory.some(x => x.name === item)) {
+			channel.send("No thanks, I've already got that");
+		} else {
+			let give;
+			if (inventory.length >= config.inventorySize) {
+				give = getRandomElement(inventory);
 			}
-		});
 
-		if (config.debug) return;
+			let str;
+			let giveStr = give
+				? `${getRandomInt(0, 1) === 0 ? 'drops' : `gives ${user.username}`} ${give.name} and `
+				: '';
+			switch (getRandomInt(0, 2)) {
+				case 0:
+					str = '*' + giveStr + `now contains ${item}*`;
+					break;
+				case 1:
+					str = '*' + giveStr + `is now carrying ${item}*`;
+					break;
+				case 2:
+					str = '*' + giveStr + `is now holding ${item}*`;
+					break;
+			}
+			channel.send(str);
+			expUp(message, (sayAnything = true), (largeGain = false));
+
+			db
+				.collection('items')
+				.doc(item)
+				.set({ name: item, user: { id: user.id, username: user.username } });
+		}
 	}
 
 	if (config.debug) return;
@@ -240,7 +237,7 @@ function messageReceived(message) {
 }
 
 //"@Bucket *" || "bucket,*" || "bucket:*" || "*, bucket" || "*,bucket"
-function mentionedBy(message) {
+async function mentionedBy(message) {
 	let user = message.author;
 	let channel = message.channel;
 	let lower = message.content.toLowerCase();
@@ -252,15 +249,14 @@ function mentionedBy(message) {
 
 	if (lower === 'inventory?' && secrets.admins[user.username]) {
 		var out = '';
-		getInventory().then(inventory => {
-			inventory.forEach(item => {
-				if (item.name.startsWith('his') || item.name.startsWith('her'))
-					out += `${item.user.username}'s ${item.name.substring(4)}, `;
-				else out += item.name + ', ';
-			});
-			out = out === '' ? "I don't have anything :(" : out.substring(0, out.length - 2);
-			channel.send(out);
+		let inventory = await getInventory();
+		inventory.forEach(item => {
+			if (item.name.startsWith('his') || item.name.startsWith('her'))
+				out += `${item.user.username}'s ${item.name.substring(4)}, `;
+			else out += item.name + ', ';
 		});
+		out = out === '' ? "I don't have anything :(" : out.substring(0, out.length - 2);
+		channel.send(out);
 		return;
 	}
 
@@ -394,7 +390,7 @@ function mentionedBy(message) {
 	}
 }
 
-function learn(words) {
+async function learn(words) {
 	words = words.filter(x => x);
 	if (words.length < 3) return;
 	let len = words.length - 2;
@@ -428,13 +424,14 @@ function processFactoid(factoid, message) {}
 
 function syllableCount(words) {}
 
-function getInventory() {
-	return new Promise((resolve, reject) => {
-		let invRef = db.collection('items');
-		invRef.get().then(snapshot => {
-			resolve(snapshot.docs.map(x => x.data()));
-		});
-	});
+async function getInventory() {
+	let inventory = [];
+	let invRef = db.collection('items');
+	let invGet = await invRef.get();
+	for (item of invGet.docs) {
+		inventory.push(item.data());
+	}
+	return inventory;
 }
 
 /**

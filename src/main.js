@@ -413,19 +413,22 @@ function mentionedBy(message) {
 function learn(words) {
 	words = words.filter(x => x);
 	if (words.length < 3) return;
+	let len = words.length - 2;
 
-	var docRef = db.collection('words').doc(words[0]).collection(words[1]).doc(words[2]);
-	var getDoc = docRef.get()
-		.then(doc => {
-			if (!doc.exists) {
-				docRef.set({ count: 1 });
-			} else {
-				docRef.set({ count: doc.data().count + 1 });
-			}
-		})
-		.catch(err => {
-			console.log('Error getting document during learn()', err);
-		})
+	for (let i = 0; i < len; i++) {
+		let docRef = db.collection('words').doc(words[i]).collection(words[i + 1]).doc(words[i + 2]);
+		docRef.get()
+			.then(doc => {
+				if (!doc.exists) {
+					docRef.set({ count: 1 });
+				} else {
+					docRef.set({ count: doc.data().count + 1 });
+				}
+			})
+			.catch(err => {
+				console.error('Error getting document during learn()', err);
+			});
+	}
 }
 
 function expUp(sourceMessage, sayAnything = true, largeGain = false) { }

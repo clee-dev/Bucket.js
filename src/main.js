@@ -1,6 +1,8 @@
 const Discord = require('discord.js');
 var Filter = require('bad-words');
 const admin = require('firebase-admin');
+var syllable = require('syllable');
+const uuid = require('uuid/v4');
 
 const secrets = require('./secrets.json');
 const serviceAccount = require('./serviceaccount_key.json');
@@ -26,7 +28,7 @@ client.on('message', msg => {
 client.login(secrets.bucketToken);
 
 const regex = {
-	punct: /[\?!.; '"():]+/gm,
+	punct: /[\?!.;'"():]+/gm,
 	punctNoApostrophe: /[\?!.; "():]+/gm,
 	punctSpace: /[^\w]+/gm,
 };
@@ -66,10 +68,10 @@ async function messageReceived(message) {
 	let words = lower.split(regex.punctSpace).filter(x => x);
 
 	if (config.debug && !secrets.channels[channel.name]) return; //!secrets.admins[user.username]) return;
+	if (message.author.id === client.user.id) return;
 
-	// if I haven't seen this user before, add them to my database
-	db
-		.collection('users')
+	//if I haven't seen this user before, add them to my database
+	db.collection('users')
 		.doc(user.id)
 		.set({ name: user.username });
 
@@ -90,13 +92,16 @@ async function messageReceived(message) {
 
 	if (state.silenced) return;
 
-	memory.recentSyllables[0] = memory.recentSyllables[1];
-	memory.recentSyllables[1] = memory.recentSyllables[2];
-	memory.recentSyllables[2] = syllableCount(message);
+	//haiku
+	{
+		memory.recentSyllables[0] = memory.recentSyllables[1];
+		memory.recentSyllables[1] = memory.recentSyllables[2];
+		memory.recentSyllables[2] = syllable(message);
 
-	if (memory.recentSyllables[0] == 5 && memory.recentSyllables[1] == 7 && memory.recentSyllables[2] == 5) {
-		channel.send('Was that a haiku?');
-		return;
+		if (memory.recentSyllables[0] == 5 && memory.recentSyllables[1] == 7 && memory.recentSyllables[2] == 5) {
+			channel.send('Was that a haiku?');
+			return;
+		}
 	}
 
 	//RECEIVING ITEMS
@@ -135,16 +140,16 @@ async function messageReceived(message) {
 			channel.send(str);
 			expUp(message, (sayAnything = true), (largeGain = false));
 
-			db
-				.collection('items')
+			db.collection('items')
 				.doc(item)
 				.set({ name: item, user: { id: user.id, username: user.username } });
 		}
+
+		return;
 	}
 
-	if (config.debug) return;
-
 	//FACTOIDS
+	/*
 	let matchingFactoids = detectedFactoids(lower);
 	if (matchingFactoids.length) {
 		let factoid;
@@ -158,62 +163,105 @@ async function messageReceived(message) {
 			return;
 		}
 	}
+	*/
 
 	//SWAPS
 	{
 		//EX -> SEX
-		if (words.some(x => x.startsWith('ex'))) {
+		if (words.some(x => x.startsWith('ex')) && chance(20)) {
+			channel.send(message.content.replace('ex', 'sex').replace('Ex', 'Sex'));
 			return;
 		}
 
 		//ELECT -> ERECT
-		{
+		if (words.some(x => x.startsWith('elect')) && chance(20)) {
+			channel.send(message.content.replace('elect', 'erect').replace('Elect', 'Erect'));
 			return;
 		}
 
 		//*USES X*
-		{
+		if (
+			(lower.startsWith('*uses ') || lower.startsWith('_uses ')) &&
+			(lower.endsWith('*') || lower.endsWith('_'))
+		) {
+			switch (getRandomInt(1, 4)) {
+				case 1:
+					channel.send('It has no effect.');
+					break;
+				case 2:
+					channel.send("It's not very effective.");
+					break;
+				case 3:
+					channel.send('It hits!');
+					break;
+				case 4:
+					channel.send("It's super effective!");
+					break;
+			}
 			return;
 		}
 
 		//THE FUCKING -> FUCKING THE
-		{
+		if (lower.includes('the fucking')) {
+			channel.send(message.content.replace('the fucking', 'fucking the'));
 			return;
 		}
 
 		//THIS FUCKING -> FUCKING THIS
-		{
+		if (lower.includes('this fucking')) {
+			channel.send(message.content.replace('this fucking', 'fucking this'));
 			return;
 		}
 
 		//IDEA -> IDEAL (30% CHANCE)
-		{
+		if (words.some(x => x === 'idea') && chance(30)) {
+			channel.send(message.content.replace('idea', 'ideal').replace('Idea', 'Ideal'));
 			return;
 		}
 
 		//sarcasm -> SArcAsM (3% CHANCE)
 		{
-			return;
+			//return;
 		}
 	}
 
 	//SAY ABCD -> ABCD
-	{
+	if (words[0] === 'say') {
+		let s = lower.substring(lower.indexOf(' ') + 1);
+		channel.send(s);
 		return;
 	}
 
-	//ANY WORD SYLLABLES > 3 (3% CHANCE) -> "FE FI FO"
-	{
+	//ANY WORD SYLLABLES >= 3 (3% CHANCE) -> "FE FI FO"
+	if (words.some(x => syllable(x) >= 3) && chance(3)) {
+		let word = words.find(x => syllable(x) >= 3);
+		let sub = '';
+		let sub2 = '';
+		let first = false;
+		for (let i = 1; i < word.length; i++) {
+			if (!'aeiouAEIOU'.includes(word[i]) && !first) {
+				sub = word.substring(i);
+				first = true;
+			} else if (!'aeiouAEIOU'.includes(word[i]) && first) {
+				sub2 = word.substring(i + 1);
+				break;
+			}
+		}
+
+		channel.send(`${word} bo${sub}, fe fi fo f${sub2}, ${word}!`);
 		return;
 	}
 
 	//SWEARJAR
-	{
-		if (filter.isProfane(lower)) {
-			//*takes a quarter | dime from ${user} and puts it in the swear jar*
-		}
+	if (filter.isProfane(lower)) {
+		//*takes a quarter | dime from ${user} and puts it in the swear jar*
+		let coin = getRandomElement([{ name: 'quarter', value: 0.25 }, { name: 'dime', value: 0.1 }]);
+		incrementDocField(db.collection('swearjar').doc(user.id), 'total', coin.value);
+		channel.send(`*takes a ${coin.name} from ${user.username} and puts it in the swear jar*`);
 		return;
 	}
+
+	return; //move further down as more functions are completed
 
 	//GOOD BAND NAME
 	{
@@ -247,20 +295,23 @@ async function mentionedBy(message) {
 
 	let words = lower.split(regex.punctSpace).filter(x => x);
 
-	if (lower === 'inventory?' && secrets.admins[user.username]) {
-		var out = '';
-		let inventory = await getInventory();
-		inventory.forEach(item => {
-			if (item.name.startsWith('his') || item.name.startsWith('her'))
-				out += `${item.user.username}'s ${item.name.substring(4)}, `;
-			else out += item.name + ', ';
-		});
-		out = out === '' ? "I don't have anything :(" : out.substring(0, out.length - 2);
-		channel.send(out);
-		return;
+	//ADMIN FUNCTIONS
+	if (secrets.admin[user.username]) {
+		if (lower === 'inventory?') {
+			let out = '';
+			let inventory = await getInventory();
+			inventory.forEach(item => {
+				if (item.name.startsWith('his') || item.name.startsWith('her'))
+					out += `${item.user.username}'s ${item.name.substring(4)}, `;
+				else out += item.name + ', ';
+			});
+			out = out === '' ? "I don't have anything :(" : out.substring(0, out.length - 2);
+			channel.send(out);
+			return;
+		}
 	}
 
-	if (config.debug) return;
+	return; //move further down as more functions are completed
 
 	if (words.length < 2 && lower[0] !== '`') {
 		/*
@@ -277,75 +328,6 @@ async function mentionedBy(message) {
 	}
 
 	if (state.silenced) return;
-
-	/*
-	//ROLLING DICE
-    if(lower.StartsWith("roll ") && !("abcdefghijklmnopqrstuvwxyz".Contains(lower.Substring(5, lower.IndexOf("d") - 5))) )
-    {
-        int num = Convert.ToInt32(lower.Substring(5, lower.IndexOf("d") - 5));
-        int die = Convert.ToInt32(lower.Substring(lower.IndexOf("d") + 1));
-
-        if (num < 1 || num > 300 || die > 300)
-        {
-            channel.send("Don't be silly.");
-            return;
-        }
-
-        int result = 0;
-        Log($"rolling {num}d{die}");
-
-        string diceFolderSlash = @"C:\Users\Turris\Desktop\Bucket\Dice\";
-        int w;
-        int h;
-        switch(die)
-        {
-            case 20:
-            case 10:
-            case 8:
-            case 6:
-            case 4:
-                w = Image.FromFile(diceFolderSlash + die.ToString() + "\\1.png").Width;
-                h = Image.FromFile(diceFolderSlash + die.ToString() + "\\1.png").Height;
-                if (num > 1)
-                {
-                    using (Bitmap b = new Bitmap(w * num, h))
-                    using (Graphics g = Graphics.FromImage(b))
-                    {
-
-                        for (int i = 0; i < num; i++)
-                        {
-                            int temp = Rand.Next(die) + 1;
-                            result += temp;
-                            g.DrawImage(Image.FromFile($"{diceFolderSlash}{die}\\{temp}.png"), w * i, 0f, w, h);
-                        }
-                        b.Save(diceFolderSlash + @"Temp\send.png");
-
-                        Log("Sending image");
-                        Client.AttachFile(e.Channel, $"You rolled {result} (out of {num * die} possible)!", diceFolderSlash + @"Temp\send.png");
-                    }
-                }
-                else
-                {
-                    result = Rand.Next(die) + 1;
-                    Log("Sending image");
-                    Client.AttachFile(e.Channel, $"You rolled {result}!", diceFolderSlash + $"{die}\\{result}.png");
-                }
-                return;
-            default:
-                if (die <= 1)
-                {
-                    channel.send("Don't be silly.");
-                    return;
-                }
-
-                for(int i = 0; i < num; i++)
-                    result += Rand.Next(die) + 1;
-                Log("Sending result");
-                channel.send($"I don't have that kind of dice, but you rolled {result} (out of {num * die} possible)!");
-                return;
-        }
-    }
-    */
 
 	if (lower === 'stats' || lower === 'stats?') {
 		channel.send(
@@ -401,18 +383,7 @@ async function learn(words) {
 			.doc(words[i])
 			.collection(words[i + 1])
 			.doc(words[i + 2]);
-		docRef
-			.get()
-			.then(doc => {
-				if (!doc.exists) {
-					docRef.set({ count: 1 });
-				} else {
-					docRef.set({ count: doc.data().count + 1 });
-				}
-			})
-			.catch(err => {
-				console.error('Error getting document during learn()', err);
-			});
+		await incrementDocField(docRef, 'count', 1);
 	}
 }
 
@@ -422,8 +393,6 @@ function expDown(sourceMessage, sayAnything = true, largeLoss = false) {}
 
 function processFactoid(factoid, message) {}
 
-function syllableCount(words) {}
-
 async function getInventory() {
 	let inventory = [];
 	let invRef = db.collection('items');
@@ -432,6 +401,13 @@ async function getInventory() {
 		inventory.push(item.data());
 	}
 	return inventory;
+}
+
+async function incrementDocField(docRef, field, increment) {
+	let doc = await docRef.get();
+	let set = {};
+	set[field] = (doc.exists ? doc.data()[field] : 0) + increment;
+	docRef.set(set, { merge: true });
 }
 
 /**
@@ -445,6 +421,11 @@ function getRandomInt(min, max) {
 	min = Math.ceil(min);
 	max = Math.floor(max);
 	return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function chance(percentage) {
+	let i = getRandomElement(1, 100);
+	return i <= percentage;
 }
 
 function getRandomElement(arr) {

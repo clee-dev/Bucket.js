@@ -149,21 +149,17 @@ async function messageReceived(message) {
 	}
 
 	//FACTOIDS
-	/*
-	let matchingFactoids = detectedFactoids(lower);
-	if (matchingFactoids.length) {
-		let factoid;
-		do {
-			factoid = getRandomElement(matchingFactoids);
-			removeElement(matchingFactoids, factoid);
-		} while (factoid === lastFactoid && matchingFactoids.length);
 
-		if (matchingFactoids.length) {
-			processFactoid(factoid, message);
-			return;
-		}
-	}
-	*/
+	// let matchingFactoids = detectedFactoids(lower);
+	// if (matchingFactoids.length) {
+	// 	let f = getRandomElement(matchingFactoids);
+	// 	if (f === lastFactoid && matchingFactoids.length >= 2) f = getRandomElement(matchingFactoids);
+
+	// 	if (matchingFactoids.length) {
+	// 		processFactoid(f, message);
+	// 		return;
+	// 	}
+	// }
 
 	//SWAPS
 	{
@@ -220,8 +216,20 @@ async function messageReceived(message) {
 		}
 
 		//sarcasm -> SArcAsM (3% CHANCE)
-		{
-			//return;
+		if (words.length < 6 && chance(3)) {
+			let out = '';
+			for (var c of lower) {
+				switch (getRandomInt(1, 2)) {
+					case 1:
+						out += c.toUpperCase();
+						break;
+					case 2:
+						out += c.toLowerCase();
+						break;
+				}
+			}
+			channel.send(out);
+			return;
 		}
 	}
 
@@ -263,12 +271,20 @@ async function messageReceived(message) {
 
 	return; //move further down as more functions are completed
 
+	//TLA
+	//"<TLA> could mean <band_name>"
+	{
+		return;
+	}
+
 	//GOOD BAND NAME
+	//"<phrase> would be a good name for a band."
 	{
 		return;
 	}
 
 	//GOOD ANIME NAME
+	//"<phrase> would be a good name for an anime."
 	{
 		return;
 	}
@@ -311,17 +327,12 @@ async function mentionedBy(message) {
 		}
 	}
 
-	return; //move further down as more functions are completed
-
 	if (words.length < 2 && lower[0] !== '`') {
-		/*
-        Log("responding vaguely");
-        channel.send(VagueResponses[Rand.Next(VagueResponses.Count)].Replace("$who", e.Author.Username));
-        */
+		channel.send(convertVars(message, getRandomElement(vagueResponses)));
 		return;
 	}
 
-	if (lower.replace(regex.punct, '') == 'come back' && state.silenced) {
+	if (lower.replace(regex.punct, '') === 'come back' && state.silenced) {
 		state.silenced = false;
 		channel.send('\\o/');
 		return;
@@ -329,20 +340,23 @@ async function mentionedBy(message) {
 
 	if (state.silenced) return;
 
-	if (lower === 'stats' || lower === 'stats?') {
-		channel.send(
-			`I've learned ${factoids} factoids, I know ${variables} variables, and I'm holding onto ${items} things right now.`
-		);
+	if (lower.startsWith('shut up')) {
+		let timeout = lower.endsWith('for a bit')
+			? 5 * 60 * 1000 //5min
+			: lower.endsWith('for a min') || lower.endsWith('for a minute')
+			? 1 * 60 * 1000 //1min
+			: 30 * 60 * 1000; //30min
+
+		state.silenced = true;
+		channel.send('Okay');
+
+		setTimeout(() => {
+			state.silenced = false;
+		}, timeout); //30min
 		return;
 	}
 
-	if (lower.startsWith('shut up')) {
-		//' for a bit' = 5 min
-		//' for a min(ute)' = 1 min
-		//else = 30 min
-		state.silenced = true;
-		return;
-	}
+	return; //move further down as more functions are completed
 
 	if (lower === 'undo last' && secrets.admins[user.username] /*|| lastFactoid.user === user.id*/) {
 		//forget last-LEARNED factoid
@@ -370,6 +384,46 @@ async function mentionedBy(message) {
 		expDown(message, (sayAnything = true), getRandomInt(0, 1) === 0);
 		return;
 	}
+
+	if (words.some(x => x.startsWith('<') && x.endsWith('>'))) {
+		return;
+	}
+
+	if (words.length >= 2) {
+		return;
+	}
+
+	if (lower.startsWith('do you know')) {
+		channel.send('No, but if you hum a few bars I can fake it.');
+		return;
+	}
+
+	let matchingFactoids = detectedFactoids(lower);
+	if (matchingFactoids.length) {
+		let f = getRandomElement(matchingFactoids);
+		if (f === lastFactoid && matchingFactoids.length >= 2) f = getRandomElement(matchingFactoids);
+
+		if (matchingFactoids.length) {
+			processFactoid(f, message);
+			return;
+		}
+		return;
+	}
+
+	if (lower.includes(' or ')) {
+		if (lower.startsWith('should i') || lower.startsWith('should we')) {
+			lower = lower.substring(7);
+			lower = lower.substring(lower.indexOf(' ') + 1);
+		}
+		lower = lower.replace(regex.punct, '');
+		let X = lower.substring(0, lower.indexOf(' or '));
+		let Y = lower.substring(lower.indexOf(' or ') + 4);
+		let arr = [X, Y];
+		channel.send(getRandomElement(arr));
+		return;
+	}
+
+	channel.send(convertVars(message, getRandomElement(vagueResponses)));
 }
 
 async function learn(words) {
@@ -383,13 +437,46 @@ async function learn(words) {
 			.doc(words[i])
 			.collection(words[i + 1])
 			.doc(words[i + 2]);
-		await incrementDocField(docRef, 'count', 1);
+		incrementDocField(docRef, 'count', 1);
 	}
 }
 
 function expUp(sourceMessage, sayAnything = true, largeGain = false) {}
 
 function expDown(sourceMessage, sayAnything = true, largeLoss = false) {}
+
+function convertVars(contextMessage, source) {
+	return source.replace('$who', contextMessage.author.username);
+}
+
+async function detectedFactoids(msg) {
+	let factoids = await db.collection('factoids').get();
+	let matches = [];
+	if (!factoids.empty) {
+		factoids = factoids.docs.map(f => f.data()).filter(f => msg.includes(f.X));
+		factoids.forEach(f => {
+			// if ((!f.Middle.StartsWith("_") && Regex.IsMatch(input, $"(?<!\\w)({Regex.Escape(f.X.StartsWith("_") ? f.X.Substring(1, f.X.Length - 1).ToLower() : f.X.ToLower())})(?!\\w)"))
+			//         || (f.Middle.StartsWith("_") && input == f.X.ToLower()))
+			//         matches.Add(f);
+			let r = new RegExp(
+				'(?<!\\w)(' +
+					escapeRegExp(
+						f.X.startsWith('_') ? f.X.substring(1, f.X.length - 1).toLowerCase() : f.X.toLowerCase()
+					) +
+					')(?!\\w)'
+			);
+			if ((!f.Middle.startsWith('_') && r.test(msg)) || (f.Middle.startsWith('_') && msg === f.X.toLowerCase()))
+				matches.push(f);
+		});
+	}
+	// .listDocuments()
+	// .map(x => x.id)
+	// .filter(x => msg.includes(x));
+}
+
+function escapeRegExp(string) {
+	return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
+}
 
 function processFactoid(factoid, message) {}
 
@@ -424,7 +511,7 @@ function getRandomInt(min, max) {
 }
 
 function chance(percentage) {
-	let i = getRandomElement(1, 100);
+	let i = getRandomInt(1, 100);
 	return i <= percentage;
 }
 

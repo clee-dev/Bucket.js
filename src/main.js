@@ -179,7 +179,6 @@ async function messageReceived(message) {
 			return;
 		}
 	}
-	0;
 
 	//SWAPS
 	{

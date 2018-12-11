@@ -62,6 +62,8 @@ var state = {
 };
 
 async function messageReceived(message) {
+	if (!message.guild) return; //no DMs
+
 	let user = message.author;
 	let channel = message.channel;
 	let lower = message.content.toLowerCase();
@@ -150,16 +152,17 @@ async function messageReceived(message) {
 
 	//FACTOIDS
 
-	// let matchingFactoids = detectedFactoids(lower);
-	// if (matchingFactoids.length) {
-	// 	let f = getRandomElement(matchingFactoids);
-	// 	if (f === lastFactoid && matchingFactoids.length >= 2) f = getRandomElement(matchingFactoids);
+	let matchingFactoids = await detectedFactoids(lower);
+	if (matchingFactoids.length) {
+		let f = getRandomElement(matchingFactoids);
+		if (f === state.lastFactoid && matchingFactoids.length >= 2) f = getRandomElement(matchingFactoids);
 
-	// 	if (matchingFactoids.length) {
-	// 		processFactoid(f, message);
-	// 		return;
-	// 	}
-	// }
+		if (matchingFactoids.length) {
+			processFactoid(f, message);
+			return;
+		}
+	}
+	0;
 
 	//SWAPS
 	{
@@ -358,7 +361,7 @@ async function mentionedBy(message) {
 
 	return; //move further down as more functions are completed
 
-	if (lower === 'undo last' && secrets.admins[user.username] /*|| lastFactoid.user === user.id*/) {
+	if (lower === 'undo last' && secrets.admins[user.username] /*|| state.lastFactoid.user === user.id*/) {
 		//forget last-LEARNED factoid
 		channel.send(`Okay, ${user.username}, forgetting ${factoid.x} <${factoid.mid}> ${factoid.y}`);
 		expDown(message, (sayAnything = true), getRandomInt(0, 1) === 0);
@@ -368,7 +371,7 @@ async function mentionedBy(message) {
 	if (
 		(lower === 'what was that' ||
 			(lower.startsWith('what was that') && lower.length === 'what was that'.length + 1)) &&
-		secrets.admins[user.username] /*|| lastFactoid.user === user.id*/
+		secrets.admins[user.username] /*|| state.lastFactoid.user === user.id*/
 	) {
 		//describe last-ACTIVATED factoid
 		channel.send(`That was: ${factoid.x} <${factoid.mid}> ${factoid.y}`);
@@ -377,7 +380,7 @@ async function mentionedBy(message) {
 
 	if (
 		(lower === 'forget that' || (lower.startsWith('forget that') && lower.length === 'forget that'.length + 1)) &&
-		secrets.admins[user.username] /*|| lastFactoid.user === user.id*/
+		secrets.admins[user.username] /*|| state.lastFactoid.user === user.id*/
 	) {
 		//forget last-ACTIVATED factoid
 		channel.send(`Okay, ${user.username}, forgetting ${factoid.x} <${factoid.mid}> ${factoid.y}`);
@@ -398,10 +401,10 @@ async function mentionedBy(message) {
 		return;
 	}
 
-	let matchingFactoids = detectedFactoids(lower);
+	let matchingFactoids = await detectedFactoids(lower);
 	if (matchingFactoids.length) {
 		let f = getRandomElement(matchingFactoids);
-		if (f === lastFactoid && matchingFactoids.length >= 2) f = getRandomElement(matchingFactoids);
+		if (f === state.lastFactoid && matchingFactoids.length >= 2) f = getRandomElement(matchingFactoids);
 
 		if (matchingFactoids.length) {
 			processFactoid(f, message);
@@ -446,7 +449,10 @@ function expUp(sourceMessage, sayAnything = true, largeGain = false) {}
 function expDown(sourceMessage, sayAnything = true, largeLoss = false) {}
 
 function convertVars(contextMessage, source) {
-	return source.replace('$who', contextMessage.author.username);
+	return source
+		.replace(/\$who/g, contextMessage.author.username)
+		.replace(/\$someone/g, getRandomElement(getUsersFromGuild(contextMessage.guild).map(x => x.username)))
+		.replace(/\$@someone/g, `<@${getRandomElement(getUsersFromGuild(contextMessage.guild).map(x => x.id))}>`);
 }
 
 async function detectedFactoids(msg) {
@@ -455,9 +461,6 @@ async function detectedFactoids(msg) {
 	if (!factoids.empty) {
 		factoids = factoids.docs.map(f => f.data()).filter(f => msg.includes(f.X));
 		factoids.forEach(f => {
-			// if ((!f.Middle.StartsWith("_") && Regex.IsMatch(input, $"(?<!\\w)({Regex.Escape(f.X.StartsWith("_") ? f.X.Substring(1, f.X.Length - 1).ToLower() : f.X.ToLower())})(?!\\w)"))
-			//         || (f.Middle.StartsWith("_") && input == f.X.ToLower()))
-			//         matches.Add(f);
 			let r = new RegExp(
 				'(?<!\\w)(' +
 					escapeRegExp(
@@ -465,20 +468,46 @@ async function detectedFactoids(msg) {
 					) +
 					')(?!\\w)'
 			);
+
+			//X <_Middle> Y triggers if the entire message is X
+			//X <Middle> Y triggers if the message contains X
 			if ((!f.Middle.startsWith('_') && r.test(msg)) || (f.Middle.startsWith('_') && msg === f.X.toLowerCase()))
 				matches.push(f);
 		});
 	}
-	// .listDocuments()
-	// .map(x => x.id)
-	// .filter(x => msg.includes(x));
+	return matches;
 }
 
 function escapeRegExp(string) {
 	return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 }
 
-function processFactoid(factoid, message) {}
+function processFactoid(factoid, message) {
+	let channel = message.channel;
+	let x = factoid.X;
+	let mid = factoid.Middle;
+	let y = factoid.Y;
+
+	//remove starting _ or ^
+	//TODO: Figure out what the "^" prefix does. Case-sensitivity maybe?
+	switch (factoid.Middle.replace(/^[\^\_]/g, '')) {
+		case "'s":
+			channel.send(`${x}'s ${convertVars(message, y)}`);
+			break;
+		case 'reply':
+			channel.send(`${convertVars(message, y)}`);
+			break;
+		case 'action':
+			channel.send(`*${convertVars(message, y)}*`);
+			break;
+		case 'is':
+		case 'are':
+		default:
+			channel.send(`${x} ${mid} ${convertVars(message, y)}`);
+			break;
+	}
+	state.lastFactoid = factoid;
+}
 
 async function getInventory() {
 	let inventory = [];
@@ -495,6 +524,10 @@ async function incrementDocField(docRef, field, increment) {
 	let set = {};
 	set[field] = (doc.exists ? doc.data()[field] : 0) + increment;
 	docRef.set(set, { merge: true });
+}
+
+function getUsersFromGuild(guild) {
+	return Array.from(guild.members, ([k, v]) => v).map(x => x.user);
 }
 
 /**
@@ -517,8 +550,4 @@ function chance(percentage) {
 
 function getRandomElement(arr) {
 	return arr[Math.floor(Math.random() * arr.length)];
-}
-
-function removeElement(arr, val) {
-	arr.splice(arr.indexOf(val), 1);
 }

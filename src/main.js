@@ -220,18 +220,7 @@ async function messageReceived(message) {
 
 		//sarcasm -> SArcAsM (3% CHANCE)
 		if (words.length < 6 && chance(3)) {
-			let out = '';
-			for (var c of lower) {
-				switch (getRandomInt(1, 2)) {
-					case 1:
-						out += c.toUpperCase();
-						break;
-					case 2:
-						out += c.toLowerCase();
-						break;
-				}
-			}
-			channel.send(out);
+			channel.send(Array.from(lower).map(x => getRandomInt(1,2) === 1 ? x.toUpperCase() : x.toLowerCase()).join('');
 			return;
 		}
 	}

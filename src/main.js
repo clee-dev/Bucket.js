@@ -307,15 +307,17 @@ async function messageReceived(message) {
 async function mentionedBy(message) {
 	let user = message.author;
 	let channel = message.channel;
-	let lower = message.content.toLowerCase();
-	if (lower.startsWith('bucket') || lower.startsWith(`<@${client.user.id}>`))
-		lower = lower.substring(lower.indexOf(' ') + 1);
-	else lower = lower.substring(0, lower.lastIndexOf(', bucket'));
 
+	let content = message.content;
+	if (content.startsWith('bucket') || content.startsWith(`<@${client.user.id}>`))
+		content = content.substring(content.indexOf(' ') + 1);
+	else content = content.substring(0, content.lastIndexOf(', bucket'));
+
+	let lower = content.toLowerCase();
 	let words = lower.split(regex.punctSpace).filter(x => x);
 
 	//ADMIN FUNCTIONS
-	if (secrets.admin[user.username]) {
+	if (secrets.admins[user.username]) {
 		if (lower === 'inventory?') {
 			let out = '';
 			let inventory = await getInventory();
@@ -359,41 +361,76 @@ async function mentionedBy(message) {
 		return;
 	}
 
-	return; //move further down as more functions are completed
+	//forget last-LEARNED factoid
+	if (lower === 'undo last') {
+		let last = await getLastLearnedFactoidData();
+		if (last && (secrets.admins[user.username] || last.user.id === user.id)) {
+			await unlearnFactoid(last.X, last.Middle, last.Y);
+			db.collection('state')
+				.doc('lastLearnedFactoid')
+				.delete();
 
-	if (lower === 'undo last' && secrets.admins[user.username] /*|| state.lastFactoid.user === user.id*/) {
-		//forget last-LEARNED factoid
-		channel.send(`Okay, ${user.username}, forgetting ${factoid.x} <${factoid.mid}> ${factoid.y}`);
-		expDown(message, (sayAnything = true), getRandomInt(0, 1) === 0);
-		return;
+			channel.send(`Okay, ${user.username}, forgetting ${last.X} <${last.Middle}> ${last.Y}`);
+			expDown(message, (sayAnything = true), getRandomInt(0, 1) === 0);
+			return;
+		}
 	}
 
+	//describe last-ACTIVATED factoid
 	if (
-		(lower === 'what was that' ||
-			(lower.startsWith('what was that') && lower.length === 'what was that'.length + 1)) &&
-		secrets.admins[user.username] /*|| state.lastFactoid.user === user.id*/
+		lower === 'what was that' ||
+		(lower.startsWith('what was that') && lower.length === 'what was that'.length + 1)
 	) {
-		//describe last-ACTIVATED factoid
-		channel.send(`That was: ${factoid.x} <${factoid.mid}> ${factoid.y}`);
-		return;
+		/*|| state.lastFactoid.user === user.id*/
+		let factoid = await getLastFactoidData();
+		if (factoid && (secrets.admins[user.username] || factoid.user.id === user.id)) {
+			channel.send(`That was: ${factoid.X} <${factoid.Middle}> ${factoid.Y}`);
+			return;
+		}
 	}
 
-	if (
-		(lower === 'forget that' || (lower.startsWith('forget that') && lower.length === 'forget that'.length + 1)) &&
-		secrets.admins[user.username] /*|| state.lastFactoid.user === user.id*/
-	) {
-		//forget last-ACTIVATED factoid
-		channel.send(`Okay, ${user.username}, forgetting ${factoid.x} <${factoid.mid}> ${factoid.y}`);
-		expDown(message, (sayAnything = true), getRandomInt(0, 1) === 0);
-		return;
+	//forget last-ACTIVATED factoid
+	if (lower === 'forget that' || (lower.startsWith('forget that') && lower.length === 'forget that'.length + 1)) {
+		let last = await getLastFactoidData();
+		if (last && (secrets.admins[user.username] || factoid.user.id === user.id)) {
+			await unlearnFactoid(last.X, last.Middle, last.Y);
+			db.collection('state')
+				.doc('lastFactoid')
+				.delete();
+
+			channel.send(`Okay, ${user.username}, forgetting ${last.X} <${last.Middle}> ${last.Y}`);
+			expDown(message, (sayAnything = true), getRandomInt(0, 1) === 0);
+			return;
+		}
 	}
 
+	//being taught a factoid
 	if (words.some(x => x.startsWith('<') && x.endsWith('>'))) {
+		let div = words.find(w => w.startsWith('<') && w.endsWith('>'));
+		div = div.substring(1, div.length - 2); //remove < >
+		if (!div.startsWith('@')) {
+			//discord mentions look like <@userid>
+			let x = lower.substring(0, lower.indexOf(div)).trim();
+			let mid = div.trim();
+			let y = content.substring(lower.indexOf(div) + div.length + 1).trim();
+
+			learnNewFactoid(x, mid, y, user, channel);
+		}
 		return;
 	}
 
+	//being taught short factoids
 	if (words.length >= 2) {
-		return;
+		if (words[1] == 'is' || words[1] == 'are') {
+			learnNewFactoid(
+				words[0],
+				words[1],
+				lower.substring(lower.indexOf(words[1]) + words[1].length + 1),
+				user,
+				channel
+			);
+			return;
+		}
 	}
 
 	if (lower.startsWith('do you know')) {
@@ -401,6 +438,7 @@ async function mentionedBy(message) {
 		return;
 	}
 
+	//process factoid
 	let matchingFactoids = await detectedFactoids(lower);
 	if (matchingFactoids.length) {
 		let f = getRandomElement(matchingFactoids);
@@ -413,6 +451,7 @@ async function mentionedBy(message) {
 		return;
 	}
 
+	//"this or that?"
 	if (lower.includes(' or ')) {
 		if (lower.startsWith('should i') || lower.startsWith('should we')) {
 			lower = lower.substring(7);
@@ -421,12 +460,56 @@ async function mentionedBy(message) {
 		lower = lower.replace(regex.punct, '');
 		let X = lower.substring(0, lower.indexOf(' or '));
 		let Y = lower.substring(lower.indexOf(' or ') + 4);
-		let arr = [X, Y];
-		channel.send(getRandomElement(arr));
+		channel.send(getRandomElement([X, Y]));
 		return;
 	}
 
 	channel.send(convertVars(message, getRandomElement(vagueResponses)));
+}
+
+async function getFactoid(x, mid, y) {
+	let f = await db
+		.collection('factoids')
+		.where('X', '==', x)
+		.where('Middle', '==', mid)
+		.where('Y', '==', y)
+		.get();
+	if (!f.empty) {
+		let r = f.docs[0].data();
+		r.id = f.docs[0].id;
+		return r;
+	} else return undefined;
+}
+
+async function learnNewFactoid(x, mid, y, user, channel) {
+	let known = await getFactoid(x, mid, y);
+
+	if (known) {
+		channel.send(`I already do that, ${user.username}`);
+	} else {
+		let id = uuid();
+		await db
+			.collection('factoids')
+			.doc(id)
+			.set({
+				X: x,
+				Middle: mid,
+				Y: y,
+				user: { id: user.id, username: user.username },
+			});
+		setLastLearnedFactoid(id);
+		channel.send(`Okay, ${user.username}${getRandomInt(1, 2) === 1 ? ", I'll remember that." : ''}`);
+	}
+}
+
+async function unlearnFactoid(x, mid, y) {
+	let f = await getFactoid(x, mid, y);
+	if (f) {
+		await db
+			.collection('factoids')
+			.doc(f.id)
+			.delete();
+	}
 }
 
 async function learn(words) {
@@ -459,7 +542,13 @@ async function detectedFactoids(msg) {
 	let factoids = await db.collection('factoids').get();
 	let matches = [];
 	if (!factoids.empty) {
-		factoids = factoids.docs.map(f => f.data()).filter(f => msg.includes(f.X));
+		factoids = factoids.docs
+			.map(f => {
+				let x = f.data();
+				x.id = f.id;
+				return x;
+			})
+			.filter(f => msg.includes(f.X));
 		factoids.forEach(f => {
 			let r = new RegExp(
 				'(?<!\\w)(' +
@@ -506,7 +595,7 @@ function processFactoid(factoid, message) {
 			channel.send(`${x} ${mid} ${convertVars(message, y)}`);
 			break;
 	}
-	state.lastFactoid = factoid;
+	setLastFactoid(factoid.id);
 }
 
 async function getInventory() {
@@ -517,6 +606,54 @@ async function getInventory() {
 		inventory.push(item.data());
 	}
 	return inventory;
+}
+
+//returns a reference
+async function getLastFactoid() {
+	let f = await db
+		.collection('state')
+		.doc('lastFactoid')
+		.get();
+	if (f.exists) return await db.collection('factoids').doc(f.data().id);
+	else return undefined;
+}
+async function getLastFactoidData() {
+	let f = await getLastFactoid();
+	if (f) {
+		let x = await f.get();
+		return x.data();
+	} else return undefined;
+}
+
+async function setLastFactoid(id) {
+	await db
+		.collection('state')
+		.doc('lastFactoid')
+		.set({ id: id });
+}
+
+//returns a reference
+async function getLastLearnedFactoid() {
+	let f = await db
+		.collection('state')
+		.doc('lastLearnedFactoid')
+		.get();
+	if (f.exists) return await db.collection('factoids').doc(f.data().id);
+	else return undefined;
+}
+async function getLastLearnedFactoidData() {
+	let f = await getLastLearnedFactoid();
+	if (f) {
+		let x = await f.get();
+		return x.data();
+	} else return undefined;
+}
+
+async function setLastLearnedFactoid(id) {
+	await db
+		.collection('state')
+		.doc('lastLearnedFactoid')
+		.set({ id: id });
 }
 
 async function incrementDocField(docRef, field, increment) {

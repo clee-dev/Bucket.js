@@ -237,7 +237,11 @@ async function messageReceived(message) {
 
 		//sarcasm -> SArcAsM (3% CHANCE)
 		if (words.length < 6 && chance(3)) {
-			channel.send(Array.from(lower).map(x => getRandomInt(1,2) === 1 ? x.toUpperCase() : x.toLowerCase()).join('');
+			channel.send(
+				Array.from(lower)
+					.map(x => (getRandomInt(1, 2) === 1 ? x.toUpperCase() : x.toLowerCase()))
+					.join('')
+			);
 			return;
 		}
 	}

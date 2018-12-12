@@ -22,7 +22,7 @@ var syllable = require('syllable');
 const uuid = require('uuid/v4');
 
 const secrets = require('./secrets.json');
-const serviceAccount = require('./serviceaccount_key.json');
+//const serviceAccount = require('./serviceaccount_key.json');
 const config = require('./config.json');
 
 const client = new Discord.Client();

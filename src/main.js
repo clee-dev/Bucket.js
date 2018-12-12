@@ -47,7 +47,7 @@ client.login(secrets.bucketToken);
 const regex = {
 	punct: /[\?!.;'"():]+/gm,
 	punctNoApostrophe: /[\?!.; "():]+/gm,
-	punctSpace: /[^\w]+/gm,
+	punctSpace: /[\?!.; '"():]+/gm, // /[^\w]+/gm,
 };
 const vagueResponses = [
 	'Error 42: No such factoid. Please contact administrator of current universe',
@@ -179,8 +179,9 @@ async function messageReceived(message) {
 
 	let matchingFactoids = await detectedFactoids(lower);
 	if (matchingFactoids.length) {
+		let lastFactoid = await getLastFactoidData();
 		let f = getRandomElement(matchingFactoids);
-		if (f === state.lastFactoid && matchingFactoids.length >= 2) f = getRandomElement(matchingFactoids);
+		if (f === lastFactoid && matchingFactoids.length >= 2) f = getRandomElement(matchingFactoids);
 
 		if (matchingFactoids.length) {
 			processFactoid(f, message);
@@ -426,12 +427,12 @@ async function mentionedBy(message) {
 	//being taught a factoid
 	if (words.some(x => x.startsWith('<') && x.endsWith('>'))) {
 		let div = words.find(w => w.startsWith('<') && w.endsWith('>'));
-		div = div.substring(1, div.length - 2); //remove < >
+		div = div.substring(1, div.length - 1); //remove < >
 		if (!div.startsWith('@')) {
 			//discord mentions look like <@userid>
-			let x = lower.substring(0, lower.indexOf(div)).trim();
+			let x = lower.substring(0, lower.indexOf(div) - 2).trim();
 			let mid = div.trim();
-			let y = content.substring(lower.indexOf(div) + div.length + 1).trim();
+			let y = content.substring(lower.indexOf(div) + div.length + 2).trim();
 
 			learnNewFactoid(x, mid, y, user, channel);
 		}
@@ -460,8 +461,9 @@ async function mentionedBy(message) {
 	//process factoid
 	let matchingFactoids = await detectedFactoids(lower);
 	if (matchingFactoids.length) {
+		let lastFactoid = await getLastFactoidData();
 		let f = getRandomElement(matchingFactoids);
-		if (f === state.lastFactoid && matchingFactoids.length >= 2) f = getRandomElement(matchingFactoids);
+		if (f === lastFactoid && matchingFactoids.length >= 2) f = getRandomElement(matchingFactoids);
 
 		if (matchingFactoids.length) {
 			processFactoid(f, message);
@@ -657,7 +659,8 @@ async function getLastFactoidData() {
 	let f = await getLastFactoid();
 	if (f) {
 		let x = await f.get();
-		return x.data();
+		let r = x.data();
+		r.id = x.id;
 	} else return undefined;
 }
 
@@ -681,7 +684,8 @@ async function getLastLearnedFactoidData() {
 	let f = await getLastLearnedFactoid();
 	if (f) {
 		let x = await f.get();
-		return x.data();
+		let r = x.data();
+		r.id = x.id;
 	} else return undefined;
 }
 

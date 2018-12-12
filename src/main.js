@@ -658,9 +658,14 @@ async function getLastFactoid() {
 async function getLastFactoidData() {
 	let f = await getLastFactoid();
 	if (f) {
-		let x = await f.get();
-		let r = x.data();
-		r.id = x.id;
+		try {
+			let x = await f.get();
+			let r = x.data();
+			r.id = x.id;
+			return r;
+		} catch {
+			return undefined; //lastFactoid (last-activated) can be a factoid that no longer exists if Bucket was told to forget it
+		}
 	} else return undefined;
 }
 
@@ -683,9 +688,14 @@ async function getLastLearnedFactoid() {
 async function getLastLearnedFactoidData() {
 	let f = await getLastLearnedFactoid();
 	if (f) {
-		let x = await f.get();
-		let r = x.data();
-		r.id = x.id;
+		try {
+			let x = await f.get();
+			let r = x.data();
+			r.id = x.id;
+			return r;
+		} catch {
+			return undefined; //lastLearnedFactoid could be nonexistent
+		}
 	} else return undefined;
 }
 

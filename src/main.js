@@ -28,8 +28,8 @@ const config = require('./config.json');
 const client = new Discord.Client();
 var filter = new Filter();
 admin.initializeApp({
-	credential: admin.credential.cert(serviceAccount),
-	//credential: admin.credential.applicationDefault(), //when deployed to GCP
+	// credential: admin.credential.cert(serviceAccount),
+	credential: admin.credential.applicationDefault(), //when deployed to GCP
 	databaseURL: secrets.dbUrl,
 });
 var db = admin.firestore();

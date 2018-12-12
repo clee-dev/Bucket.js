@@ -468,7 +468,7 @@ async function mentionedBy(message) {
 		if (words[0] === 'remember') {
 			let user = Array.from(client.users)
 				.map(x => x[1])
-				.find(x => x.username === words[1]);
+				.find(x => x.username.toLowerCase() === words[1]);
 			if (user) {
 				let messages = await channel.fetchMessages({ limit: 50 });
 				messages = Array.from(messages)

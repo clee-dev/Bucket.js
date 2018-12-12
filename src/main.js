@@ -70,14 +70,6 @@ const vagueResponses = [
 	'\\o/',
 ];
 
-var memory = {
-	recentSyllables: [0, 0, 0],
-	lastFactoid: {},
-};
-var state = {
-	silenced: false,
-};
-
 async function messageReceived(message) {
 	if (!message.guild) return; //no DMs
 
@@ -109,17 +101,33 @@ async function messageReceived(message) {
 
 	learn(words);
 
-	if (state.silenced) return;
+	let silenced = await getSilencedState();
+	if (silenced) return;
 
 	//haiku
 	{
-		memory.recentSyllables[0] = memory.recentSyllables[1];
-		memory.recentSyllables[1] = memory.recentSyllables[2];
-		memory.recentSyllables[2] = syllable(message);
+		let ref = await db
+			.collection('state')
+			.doc('recentSyllables')
+			.get();
+		if (ref.exists) {
+			let recentSyllables = ref.data().arr;
+			recentSyllables[0] = recentSyllables[1];
+			recentSyllables[1] = recentSyllables[2];
+			recentSyllables[2] = syllable(message);
 
-		if (memory.recentSyllables[0] == 5 && memory.recentSyllables[1] == 7 && memory.recentSyllables[2] == 5) {
-			channel.send('Was that a haiku?');
-			return;
+			db.collection('state')
+				.doc('recentSyllables')
+				.set({ arr: recentSyllables });
+
+			if (recentSyllables[0] == 5 && recentSyllables[1] == 7 && recentSyllables[2] == 5) {
+				channel.send('Was that a haiku?');
+				return;
+			}
+		} else {
+			db.collection('state')
+				.doc('recentSyllables')
+				.set({ arr: [0, 0, 0] });
 		}
 	}
 
@@ -325,6 +333,8 @@ async function mentionedBy(message) {
 	let lower = content.toLowerCase();
 	let words = lower.split(regex.punctSpace).filter(x => x);
 
+	let silenced = await getSilencedState();
+
 	//ADMIN FUNCTIONS
 	if (secrets.admins[user.username]) {
 		if (lower === 'inventory?') {
@@ -346,13 +356,13 @@ async function mentionedBy(message) {
 		return;
 	}
 
-	if (lower.replace(regex.punct, '') === 'come back' && state.silenced) {
-		state.silenced = false;
+	if (lower.replace(regex.punct, '') === 'come back' && silenced) {
+		setSilencedState(false);
 		channel.send('\\o/');
 		return;
 	}
 
-	if (state.silenced) return;
+	if (silenced) return;
 
 	if (lower.startsWith('shut up')) {
 		let timeout = lower.endsWith('for a bit')
@@ -361,11 +371,11 @@ async function mentionedBy(message) {
 			? 1 * 60 * 1000 //1min
 			: 30 * 60 * 1000; //30min
 
-		state.silenced = true;
+		setSilencedState(true);
 		channel.send('Okay');
 
 		setTimeout(() => {
-			state.silenced = false;
+			setSilencedState(false);
 		}, timeout); //30min
 		return;
 	}
@@ -534,6 +544,23 @@ async function learn(words) {
 			.doc(words[i + 2]);
 		incrementDocField(docRef, 'count', 1);
 	}
+}
+
+async function getSilencedState() {
+	let r = await db
+		.collection('state')
+		.doc('silenced')
+		.get();
+	if (r.exists) {
+		return r.data().value;
+	} else return false;
+}
+
+async function setSilencedState(bool) {
+	await db
+		.collection('state')
+		.doc('silenced')
+		.set({ value: bool });
 }
 
 function expUp(sourceMessage, sayAnything = true, largeGain = false) {}

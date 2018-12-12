@@ -1,0 +1,27 @@
+{
+	"name": "bucket",
+	"version": "1.0.0",
+	"description": "Buckety bucket",
+	"main": "main.js",
+	"dependencies": {
+		"bad-words": "^3.0.0",
+		"discord.js": "^11.4.2",
+		"firebase-admin": "^6.3.0",
+		"syllable": "^3.2.0",
+		"uuid": "^3.3.2"
+	},
+	"devDependencies": {},
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/clee-dev/Bucket.js.git"
+	},
+	"author": "Cody Lee",
+	"license": "GPL-3.0-or-later",
+	"bugs": {
+		"url": "https://github.com/clee-dev/Bucket.js/issues"
+	},
+	"homepage": "https://github.com/clee-dev/Bucket.js#readme"
+}

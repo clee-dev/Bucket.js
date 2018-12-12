@@ -441,7 +441,7 @@ async function mentionedBy(message) {
 
 	//being taught short factoids
 	if (words.length >= 2) {
-		if (words[1] == 'is' || words[1] == 'are') {
+		if (words[1] === 'is' || words[1] === 'are') {
 			learnNewFactoid(
 				words[0],
 				words[1],
@@ -450,6 +450,46 @@ async function mentionedBy(message) {
 				channel
 			);
 			return;
+		}
+
+		if (words[1] === 'quotes') {
+			let name = words[0];
+			let quotes = await db
+				.collection('quotes')
+				.where('username', '==', name)
+				.get();
+			if (!quotes.empty) {
+				let quote = getRandomElement(quotes.docs).data().quote;
+				channel.send(`${name}: ${quote}`);
+				return;
+			} else channel.send(`I don't have any quotes for ${name}`);
+		}
+
+		if (words[0] === 'remember') {
+			let user = Array.from(client.users)
+				.map(x => x[1])
+				.find(x => x.username === words[1]);
+			if (user) {
+				let messages = await channel.fetchMessages({ limit: 50 });
+				messages = Array.from(messages)
+					.map(x => x[1])
+					.filter(x => x.id !== message.id)
+					.filter(x => x.author.id === user.id)
+					.filter(x =>
+						x.content
+							.toLowerCase()
+							.includes(content.substring(content.indexOf(words[1]) + words[1].length + 1).toLowerCase())
+					);
+
+				if (messages.length) {
+					let remember = messages[0].content;
+					channel.send(`Okay, remembering ${user.username} said ${remember}`);
+					db.collection('quotes')
+						.doc(uuid())
+						.set({ username: user.username, quote: remember });
+					return;
+				}
+			}
 		}
 	}
 

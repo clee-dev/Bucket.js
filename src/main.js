@@ -245,10 +245,11 @@ async function messageReceived(message) {
 
 		//sarcasm -> SArcAsM (3% CHANCE)
 		if (words.length < 6 && chance(3)) {
+			let sarcastic = client.emojis.find(emoji => emoji.name === 'sarcastic');
 			channel.send(
 				Array.from(lower)
 					.map(x => (getRandomInt(1, 2) === 1 ? x.toUpperCase() : x.toLowerCase()))
-					.join('')
+					.join('') + sarcastic ? ` ${sarcastic}` : ''
 			);
 			return;
 		}

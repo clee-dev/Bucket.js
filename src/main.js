@@ -290,8 +290,11 @@ async function messageReceived(message) {
 		channel.send(`*takes a ${coin.name} from ${user.username} and puts it in the swear jar*`);
 		return;
 	}
-
-	return; //move further down as more functions are completed
+	
+	if (lower === 'buckety bucket') {
+		channel.send(`${user.username}ity ${user.username}`);
+		return;
+	}
 
 	//TLA
 	//"<TLA> could mean <band_name>"

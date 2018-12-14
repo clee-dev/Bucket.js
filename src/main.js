@@ -470,31 +470,33 @@ async function mentionedBy(message) {
 		}
 
 		if (words[0] === 'remember') {
-			let user = Array.from(client.users)
-				.map(x => x[1])
-				.find(x => x.username.toLowerCase() === words[1].toLowerCase());
-			if (user) {
-				let messages = await channel.fetchMessages({ limit: 50 });
-				messages = Array.from(messages)
-					.map(x => x[1])
-					.filter(x => x.id !== message.id)
-					.filter(x => x.author.id === user.id)
-					.filter(x =>
-						x.content
-							.toLowerCase()
-							.includes(content.substring(content.indexOf(words[1]) + words[1].length + 1).toLowerCase())
-					);
-
-				if (messages.length) {
-					let remember = messages[0].content;
-					channel.send(`Okay, remembering ${user.username} said ${remember}`);
-					db.collection('quotes')
-						.doc(uuid())
-						.set({ username: user.username, quote: remember });
-					return;
-				}
-			}
-		}
+                        let users = Array.from(client.users)
+                                .map(x => x[1]);
+                        let user = users
+                                .find(x => x.username.toLowerCase() === words[1]);
+                        if (user) {
+                                let messages = await channel.fetchMessages({ limit: 50 });
+                                messages = Array.from(messages)
+                                        .map(x => x[1])
+                                        .filter(x => x.id !== message.id)
+                                        .filter(x => x.author.id === user.id)
+                                        .filter(x =>
+                                                x.content.toLowerCase().includes(
+                                                        content.toLowerCase().substring(content.toLowerCase().indexOf(words[1]) + words[1].length + 1).toLowerCase()
+                                                )
+                                        );
+                                console.log('MESSAGES');
+                                console.log(messages);
+                                if (messages.length) {
+                                        let remember = messages[0].content;
+                                        channel.send(`Okay, remembering ${user.username} said ${remember}`);
+                                        db.collection('quotes')
+                                                .doc(uuid())
+                                                .set({ username: user.username, quote: remember });
+                                        return;
+                                }
+                        }
+                }
 	}
 
 	if (lower.startsWith('do you know')) {

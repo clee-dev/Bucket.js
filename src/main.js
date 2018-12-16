@@ -145,7 +145,7 @@ async function messageReceived(message) {
 			channel.send("No thanks, I've already got that");
 		} else {
 			let give;
-			if (inventory.length >= config.inventorySize) {
+			if (inventory.length >= config.inventorySize * 2 || (inventory.length >= config.inventorySize && chance(50))) {
 				give = getRandomElement(inventory);
 			}
 
@@ -160,7 +160,7 @@ async function messageReceived(message) {
 				.set({ name: item, user: { id: user.id, username: user.username } });
 
 			if (give) {
-				db.collection('items')
+				await db.collection('items')
 					.doc(give.name)
 					.delete();
 			}
@@ -199,32 +199,32 @@ async function messageReceived(message) {
 	//SWAPS
 	{
 		//EX -> SEX
-		if (words.some(x => x.startsWith('ex')) && chance(20)) {
+		if (words.some(x => x.startsWith('ex')) && chance(1)) {
 			channel.send(message.content.replace('ex', 'sex').replace('Ex', 'Sex'));
 			return;
 		}
 
 		//ELECT -> ERECT
-		if (words.some(x => x.startsWith('elect')) && chance(20)) {
+		if (words.some(x => x.startsWith('elect')) && chance(1)) {
 			channel.send(message.content.replace('elect', 'erect').replace('Elect', 'Erect'));
 			return;
 		}
 
+		//IDEA -> IDEAL (30% CHANCE)
+		if (words.some(x => x === 'idea') && chance(1)) {
+			channel.send(message.content.replace('idea', 'ideal').replace('Idea', 'Ideal'));
+			return;
+		}
+
 		//THE FUCKING -> FUCKING THE
-		if (lower.includes('the fucking')) {
+		if (lower.includes('the fucking') && chance(100)) {
 			channel.send(message.content.replace('the fucking', 'fucking the'));
 			return;
 		}
 
 		//THIS FUCKING -> FUCKING THIS
-		if (lower.includes('this fucking')) {
+		if (lower.includes('this fucking') && chance(100)) {
 			channel.send(message.content.replace('this fucking', 'fucking this'));
-			return;
-		}
-
-		//IDEA -> IDEAL (30% CHANCE)
-		if (words.some(x => x === 'idea') && chance(30)) {
-			channel.send(message.content.replace('idea', 'ideal').replace('Idea', 'Ideal'));
 			return;
 		}
 
@@ -288,8 +288,11 @@ async function messageReceived(message) {
 	}
 
 	//GOOD BAND NAME
-	//"<phrase> would be a good name for a band."
-	{
+	//"[<phrase>|that] would [make|be] a [good|nice] name for a band."
+	if (words.length === 3 & chance(5)) {
+		if (words[0] === words[1] || words[0] === words[2] || words[1] === words[2]) break;
+		
+		let 
 		return;
 	}
 
@@ -430,7 +433,8 @@ async function mentionedBy(message) {
 			let mid = div.trim();
 			let y = content.substring(lower.indexOf(div) + div.length + 2).trim();
 
-			learnNewFactoid(x, mid, y, user, channel);
+			if (chance(95)) learnNewFactoid(x, mid, y, user, channel);
+			else channel.send(`Your mom is ${y}!`);
 		}
 		return;
 	}

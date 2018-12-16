@@ -501,7 +501,7 @@ async function mentionedBy(message) {
 		let inv = await getInventory();
 		let give = getRandomElement(inv);
 
-		channel.out(
+		channel.send(
 			`*gives ${user.username} ${
 				give.name.startsWith('his')
 					? give.name.replace('his', give.user.username)
@@ -517,32 +517,6 @@ async function mentionedBy(message) {
 			.delete();
 		return;
 	}
-	/*
-	if ((lower == "i want a present" || (lower.StartsWith("i want a present") && lower.Length == "i want a present".Length + 1)) || (lower == "give me a present" || (lower.StartsWith("give me a present") && lower.Length == "give me a present".Length + 1)))
-	{
-		Learn(words);
-		List<Inventory> inventory = (from i in Bucket.Inventory
-									 select i).ToList();
-		Inventory give = inventory[Rand.Next(inventory.Count)];
-		Bucket.Inventory.Remove(give);
-		Bucket.SaveChanges();
-		Say($"*gives {e.Author.Username} {((give.item.StartsWith("his") || give.item.StartsWith("her")) ? $"{give.username}'s {give.item.Substring(4)}" : give.item)}*", e.Channel);
-		return;
-	}
-
-	if ((lower == "*tips bucket over*" || (lower.StartsWith("*tips bucket over") && lower.Length == "*tips bucket over".Length + 2 && lower[lower.Length - 1] == '*')) || (lower == "*kicks bucket*" || (lower.StartsWith("*kicks bucket") && lower.Length == "*kicks bucket".Length + 2 && lower[lower.Length - 1] == '*')))
-	{
-		List <Inventory> inventory = (from i in Bucket.Inventory
-									 select i).ToList();
-		Inventory drop = inventory[Rand.Next(inventory.Count)];
-		Bucket.Inventory.Remove(drop);
-		Bucket.SaveChanges();
-		
-		Log($"tipping over, dropped {drop.item}");
-		Say($"*drops {drop.item}", e.Channel);
-		return;
-	}
-	*/
 
 	if (lower.startsWith('do you know')) {
 		channel.send('No, but if you hum a few bars I can fake it.');

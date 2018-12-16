@@ -315,6 +315,11 @@ async function messageReceived(message) {
 
 //"@Bucket *" || "bucket,*" || "bucket:*" || "*, bucket" || "*,bucket"
 async function mentionedBy(message) {
+	if(message.embeds.length) {
+		respondVaguely(message);
+		return;
+	}
+
 	let user = message.author;
 	let channel = message.channel;
 
@@ -351,7 +356,7 @@ async function mentionedBy(message) {
 		if (matchingFactoids.length) {
 			processFactoid(matchingFactoids, message);
 		} else {
-			channel.send(convertVars(message, getRandomElement(vagueResponses)));
+			respondVaguely(message);
 		}
 		return;
 	}
@@ -547,7 +552,11 @@ async function mentionedBy(message) {
 		return;
 	}
 
-	channel.send(convertVars(message, getRandomElement(vagueResponses)));
+	respondVaguely(message);
+}
+
+function respondVaguely(sourceMessage) {
+	channel.send(convertVars(sourceMessage, getRandomElement(vagueResponses)));
 }
 
 async function getFactoid(x, mid, y) {

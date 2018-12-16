@@ -233,7 +233,7 @@ async function messageReceived(message) {
 		}
 
 		//sarcasm -> SArcAsM (3% CHANCE)
-		if (words.length < 6 && chance(3)) {
+		if (words.length <= 6 && chance(3)) {
 			let sarcastic = client.emojis.find(emoji => emoji.name === 'sarcastic');
 			channel.send(
 				Array.from(lower)
@@ -678,13 +678,12 @@ async function detectedFactoids(msg) {
 			})
 			.filter(f => msg.includes(f.X));
 		factoids.forEach(f => {
-			let r = new RegExp(
-				'(?<!\\w)(' +
-					escapeRegExp(
-						f.X.startsWith('_') ? f.X.substring(1, f.X.length - 1).toLowerCase() : f.X.toLowerCase()
-					) +
-					')(?!\\w)'
+			let mid = escapeRegExp(
+				f.X.startsWith('_') ? f.X.substring(1, f.X.length - 1).toLowerCase() : f.X.toLowerCase()
 			);
+			let r = /(_?)swap/.test(f.Middle) //'swap' or '_swap'
+				? new RegExp(mid)
+				: new RegExp('(?<!\\w)' + mid + '(?!\\w)');
 
 			//X <_Middle> Y triggers if the entire message is X
 			//X <Middle> Y triggers if the message contains X
@@ -720,6 +719,12 @@ async function processFactoid(matchingFactoids, message) {
 			break;
 		case 'action':
 			channel.send(`*${convertVars(message, y)}*`);
+			break;
+		case 'swap':
+			if (chance(1)) {
+				let r = new RegExp(escapeRegExp(x), 'gi');
+				channel.send(`${message.content.replace(r, convertVars(message, y))}`);
+			}
 			break;
 		case 'is':
 		case 'are':

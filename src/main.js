@@ -149,25 +149,21 @@ async function messageReceived(message) {
 				give = getRandomElement(inventory);
 			}
 
-			let str;
 			let giveStr = give ? `${chance(50) ? 'drops' : `gives ${user.username}`} ${give.name} and ` : '';
-			switch (getRandomInt(0, 2)) {
-				case 0:
-					str = '*' + giveStr + `now contains ${item}*`;
-					break;
-				case 1:
-					str = '*' + giveStr + `is now carrying ${item}*`;
-					break;
-				case 2:
-					str = '*' + giveStr + `is now holding ${item}*`;
-					break;
-			}
+			let str =
+				'*' + giveStr + getRandomElement(['now contains', 'is now carrying', 'is now holding']) + ` ${item}*`;
 			channel.send(str);
 			expUp(message, (sayAnything = true), (largeGain = false));
 
 			db.collection('items')
 				.doc(item)
 				.set({ name: item, user: { id: user.id, username: user.username } });
+
+			if (give) {
+				db.collection('items')
+					.doc(give)
+					.delete();
+			}
 		}
 
 		return;
@@ -494,6 +490,42 @@ async function mentionedBy(message) {
 			}
 		}
 	}
+
+	if (
+		lower === 'i want a present' ||
+		(lower.startsWith('i want a present') && lower.length === 'i want a present'.length + 1) ||
+		(lower === 'give me a present' ||
+			(lower.startsWIth('give me a present') && lower.length === 'give me a present'.length + 1))
+	) {
+		let inv = await getInventory();
+		let give = getRandomElement(inv);
+	}
+	/*
+	if ((lower == "i want a present" || (lower.StartsWith("i want a present") && lower.Length == "i want a present".Length + 1)) || (lower == "give me a present" || (lower.StartsWith("give me a present") && lower.Length == "give me a present".Length + 1)))
+	{
+		Learn(words);
+		List<Inventory> inventory = (from i in Bucket.Inventory
+									 select i).ToList();
+		Inventory give = inventory[Rand.Next(inventory.Count)];
+		Bucket.Inventory.Remove(give);
+		Bucket.SaveChanges();
+		Say($"*gives {e.Author.Username} {((give.item.StartsWith("his") || give.item.StartsWith("her")) ? $"{give.username}'s {give.item.Substring(4)}" : give.item)}*", e.Channel);
+		return;
+	}
+
+	if ((lower == "*tips bucket over*" || (lower.StartsWith("*tips bucket over") && lower.Length == "*tips bucket over".Length + 2 && lower[lower.Length - 1] == '*')) || (lower == "*kicks bucket*" || (lower.StartsWith("*kicks bucket") && lower.Length == "*kicks bucket".Length + 2 && lower[lower.Length - 1] == '*')))
+	{
+		List <Inventory> inventory = (from i in Bucket.Inventory
+									 select i).ToList();
+		Inventory drop = inventory[Rand.Next(inventory.Count)];
+		Bucket.Inventory.Remove(drop);
+		Bucket.SaveChanges();
+		
+		Log($"tipping over, dropped {drop.item}");
+		Say($"*drops {drop.item}", e.Channel);
+		return;
+	}
+	*/
 
 	if (lower.startsWith('do you know')) {
 		channel.send('No, but if you hum a few bars I can fake it.');

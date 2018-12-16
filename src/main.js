@@ -283,18 +283,13 @@ async function messageReceived(message) {
 
 	if (message.embeds.length) return;
 
-	//TLA
-	//"<TLA> could mean <band_name>"
-	{
-		return;
-	}
-
 	//GOOD BAND NAME
 	//"[<phrase>|that] would [make|be] a [good|nice] name for a band."
 	if (words.length === 3 & chance(3)) { //made up a % chance to trigger - XCKD Bucket does something more complex
 		if (hasDuplicates(words)) break;
 		
 		let bandName = words.map(x => x[0].toUpperCase() + x.substring(1).toLowerCase()).join(' ');
+		let tla = words.map(x => x[0].toUpperCase()).join('');
 		let out = (chance(50) ? bandName : 'that') + 
 			' would ' +
 			(chance(50) ? 'make' : 'be') + 
@@ -302,7 +297,21 @@ async function messageReceived(message) {
 			(chance(50) ? 'good' : 'nice') + 
 			' name for a band.';
 		channel.send(out);
+
+		db.collection('bands').doc(uuid()).set({name:bandName, acronym:tla});
 		return;
+	}
+
+	//TLA
+	//"<TLA> could mean <band_name>"
+	let TLA = words.find(x => x.length === 3 && x[0] === x[0].toUpperCase() && x[1] === x[1].toUpperCase() && x[2] === x[2].toUpperCase());
+	if (TLA) {
+		let bands = await db.collection('bands').where('acronym', '==', TLA).get();
+		if (!bands.empty) {
+			let meaning = getRandomElement(bands.docs).data().name;
+			channel.send(`${TLA} could mean ${meaning}`);
+			return;
+		}
 	}
 
 	//GENERATE MARKOV SENTENCE

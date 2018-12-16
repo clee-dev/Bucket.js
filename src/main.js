@@ -197,7 +197,7 @@ async function messageReceived(message) {
 	}
 
 	//SWAPS
-	{
+	if (!message.embeds.length) {
 		//EX -> SEX
 		if (words.some(x => x.startsWith('ex')) && chance(1)) {
 			channel.send(message.content.replace('ex', 'sex').replace('Ex', 'Sex'));
@@ -248,7 +248,7 @@ async function messageReceived(message) {
 	}
 
 	//ANY WORD SYLLABLES >= 3 (3% CHANCE) -> "FE FI FO"
-	if (words.some(x => syllable(x) >= 3) && chance(3)) {
+	if (!message.embeds.length && words.some(x => syllable(x) >= 3) && chance(3)) {
 		let word = words.find(x => syllable(x) >= 3);
 		let sub = '';
 		let sub2 = '';
@@ -268,7 +268,7 @@ async function messageReceived(message) {
 	}
 
 	//SWEARJAR
-	if (filter.isProfane(lower)) {
+	if (!message.embeds.length && filter.isProfane(lower)) {
 		//*takes a quarter | dime from ${user} and puts it in the swear jar*
 		let coin = getRandomElement([{ name: 'quarter', value: 0.25 }, { name: 'dime', value: 0.1 }]);
 		incrementDocField(db.collection('swearjar').doc(user.id), 'total', coin.value);
@@ -280,6 +280,8 @@ async function messageReceived(message) {
 		channel.send(`${user.username}ity ${user.username}`);
 		return;
 	}
+
+	if (message.embeds.length) return;
 
 	//TLA
 	//"<TLA> could mean <band_name>"
@@ -315,11 +317,6 @@ async function messageReceived(message) {
 
 //"@Bucket *" || "bucket,*" || "bucket:*" || "*, bucket" || "*,bucket"
 async function mentionedBy(message) {
-	if(message.embeds.length) {
-		respondVaguely(message);
-		return;
-	}
-
 	let user = message.author;
 	let channel = message.channel;
 
@@ -351,7 +348,7 @@ async function mentionedBy(message) {
 	}
 
 	let matchingFactoids;
-	if (words.length < 2 && lower[0] !== '`') {
+	if (!message.embeds.length && words.length < 2 && lower[0] !== '`') {
 		matchingFactoids = await detectedFactoids(lower);
 		if (matchingFactoids.length) {
 			processFactoid(matchingFactoids, message);

@@ -294,7 +294,7 @@ async function messageReceived(message) {
 	if (words.length === 3 & chance(5)) {
 		if (words[0] === words[1] || words[0] === words[2] || words[1] === words[2]) break;
 		
-		let 
+		
 		return;
 	}
 

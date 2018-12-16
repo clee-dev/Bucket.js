@@ -181,6 +181,25 @@ async function messageReceived(message) {
 		return;
 	}
 
+	//*USES X*
+	if ((lower.startsWith('*uses ') || lower.startsWith('_uses ')) && (lower.endsWith('*') || lower.endsWith('_'))) {
+		switch (getRandomInt(1, 4)) {
+			case 1:
+				channel.send('It has no effect.');
+				break;
+			case 2:
+				channel.send("It's not very effective.");
+				break;
+			case 3:
+				channel.send('It hits!');
+				break;
+			case 4:
+				channel.send("It's super effective!");
+				break;
+		}
+		return;
+	}
+
 	//SWAPS
 	{
 		//EX -> SEX
@@ -192,28 +211,6 @@ async function messageReceived(message) {
 		//ELECT -> ERECT
 		if (words.some(x => x.startsWith('elect')) && chance(20)) {
 			channel.send(message.content.replace('elect', 'erect').replace('Elect', 'Erect'));
-			return;
-		}
-
-		//*USES X*
-		if (
-			(lower.startsWith('*uses ') || lower.startsWith('_uses ')) &&
-			(lower.endsWith('*') || lower.endsWith('_'))
-		) {
-			switch (getRandomInt(1, 4)) {
-				case 1:
-					channel.send('It has no effect.');
-					break;
-				case 2:
-					channel.send("It's not very effective.");
-					break;
-				case 3:
-					channel.send('It hits!');
-					break;
-				case 4:
-					channel.send("It's super effective!");
-					break;
-			}
 			return;
 		}
 

@@ -575,7 +575,7 @@ async function mentionedBy(message) {
 }
 
 function respondVaguely(sourceMessage) {
-	channel.send(convertVars(sourceMessage, getRandomElement(vagueResponses)));
+	sourceMessage.channel.send(convertVars(sourceMessage, getRandomElement(vagueResponses)));
 }
 
 async function getFactoid(x, mid, y) {

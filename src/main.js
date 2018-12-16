@@ -291,16 +291,17 @@ async function messageReceived(message) {
 
 	//GOOD BAND NAME
 	//"[<phrase>|that] would [make|be] a [good|nice] name for a band."
-	if (words.length === 3 & chance(5)) {
-		if (words[0] === words[1] || words[0] === words[2] || words[1] === words[2]) break;
+	if (words.length === 3 & chance(3)) { //made up a % chance to trigger - XCKD Bucket does something more complex
+		if (hasDuplicates(words)) break;
 		
-		
-		return;
-	}
-
-	//GOOD ANIME NAME
-	//"<phrase> would be a good name for an anime."
-	{
+		let bandName = words.map(x => x[0].toUpperCase() + x.substring(1).toLowerCase()).join(' ');
+		let out = (chance(50) ? bandName : 'that') + 
+			' would ' +
+			(chance(50) ? 'make' : 'be') + 
+			' a ' +
+			(chance(50) ? 'good' : 'nice') + 
+			' name for a band.';
+		channel.send(out);
 		return;
 	}
 
@@ -809,4 +810,9 @@ function chance(percentage) {
 
 function getRandomElement(arr) {
 	return arr[Math.floor(Math.random() * arr.length)];
+}
+
+// https://stackoverflow.com/questions/7376598/in-javascript-how-do-i-check-if-an-array-has-duplicate-values
+function hasDuplicates(array) {
+	return (new Set(array)).size !== array.length;
 }

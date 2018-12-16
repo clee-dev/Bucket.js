@@ -161,7 +161,7 @@ async function messageReceived(message) {
 
 			if (give) {
 				db.collection('items')
-					.doc(give)
+					.doc(give.name)
 					.delete();
 			}
 		}
@@ -333,6 +333,7 @@ async function mentionedBy(message) {
 			inventory.forEach(item => {
 				if (item.name.startsWith('his') || item.name.startsWith('her'))
 					out += `${item.user.username}'s ${item.name.substring(4)}, `;
+				else if (item.name.startsWith('their')) out += `${item.user.username}'s ${item.name.substring(6)}, `;
 				else out += item.name + ', ';
 			});
 			out = out === '' ? "I don't have anything :(" : out.substring(0, out.length - 2);
@@ -499,6 +500,22 @@ async function mentionedBy(message) {
 	) {
 		let inv = await getInventory();
 		let give = getRandomElement(inv);
+
+		channel.out(
+			`*gives ${user.username} ${
+				give.name.startsWith('his')
+					? give.name.replace('his', give.user.username)
+					: give.name.startsWith('her')
+					? give.name.replace('her', give.user.username)
+					: give.name.startsWith('their')
+					? give.name.replace('their', give.user.username)
+					: give.name
+			}*`
+		);
+		db.collection('items')
+			.doc('give')
+			.delete();
+		return;
 	}
 	/*
 	if ((lower == "i want a present" || (lower.StartsWith("i want a present") && lower.Length == "i want a present".Length + 1)) || (lower == "give me a present" || (lower.StartsWith("give me a present") && lower.Length == "give me a present".Length + 1)))

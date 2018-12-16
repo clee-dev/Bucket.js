@@ -22,14 +22,14 @@ var syllable = require('syllable');
 const uuid = require('uuid/v4');
 
 const secrets = require('./secrets.json');
-// const serviceAccount = require('./serviceaccount_key.json'); //uncomment for local testing
+const serviceAccount = require('./serviceaccount_key.json'); //uncomment for local testing
 const config = require('./config.json');
 
 const client = new Discord.Client();
 var filter = new Filter();
 admin.initializeApp({
-	// credential: admin.credential.cert(serviceAccount), //uncomment for local testing
-	credential: admin.credential.applicationDefault(), //when deployed to GCP - comment for local testing
+	credential: admin.credential.cert(serviceAccount), //uncomment for local testing
+	// credential: admin.credential.applicationDefault(), //when deployed to GCP - comment for local testing
 	databaseURL: secrets.dbUrl,
 });
 var db = admin.firestore();
@@ -713,26 +713,30 @@ async function processFactoid(matchingFactoids, message) {
 	switch (factoid.Middle.replace(/^[\^\_]/g, '')) {
 		case "'s":
 			channel.send(`${x}'s ${convertVars(message, y)}`);
+			setLastFactoid(factoid.id);
 			break;
 		case 'reply':
 			channel.send(`${convertVars(message, y)}`);
+			setLastFactoid(factoid.id);
 			break;
 		case 'action':
 			channel.send(`*${convertVars(message, y)}*`);
+			setLastFactoid(factoid.id);
 			break;
 		case 'swap':
 			if (chance(1)) {
 				let r = new RegExp(escapeRegExp(x), 'gi');
 				channel.send(`${message.content.replace(r, convertVars(message, y))}`);
+				setLastFactoid(factoid.id);
 			}
 			break;
 		case 'is':
 		case 'are':
 		default:
 			channel.send(`${x} ${mid} ${convertVars(message, y)}`);
+			setLastFactoid(factoid.id);
 			break;
 	}
-	setLastFactoid(factoid.id);
 }
 
 async function getInventory() {

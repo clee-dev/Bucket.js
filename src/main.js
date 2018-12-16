@@ -22,14 +22,14 @@ var syllable = require('syllable');
 const uuid = require('uuid/v4');
 
 const secrets = require('./secrets.json');
-// const serviceAccount = require('./serviceaccount_key.json'); //uncomment for local testing
+const serviceAccount = require('./serviceaccount_key.json'); //uncomment for local testing
 const config = require('./config.json');
 
 const client = new Discord.Client();
 var filter = new Filter();
 admin.initializeApp({
-	// credential: admin.credential.cert(serviceAccount), //uncomment for local testing
-	credential: admin.credential.applicationDefault(), //when deployed to GCP - comment for local testing
+	credential: admin.credential.cert(serviceAccount), //uncomment for local testing
+	// credential: admin.credential.applicationDefault(), //when deployed to GCP - comment for local testing
 	databaseURL: secrets.dbUrl,
 });
 var db = admin.firestore();
@@ -145,7 +145,10 @@ async function messageReceived(message) {
 			channel.send("No thanks, I've already got that");
 		} else {
 			let give;
-			if (inventory.length >= config.inventorySize * 2 || (inventory.length >= config.inventorySize && chance(50))) {
+			if (
+				inventory.length >= config.inventorySize * 2 ||
+				(inventory.length >= config.inventorySize && chance(50))
+			) {
 				give = getRandomElement(inventory);
 			}
 
@@ -160,7 +163,8 @@ async function messageReceived(message) {
 				.set({ name: item, user: { id: user.id, username: user.username } });
 
 			if (give) {
-				await db.collection('items')
+				await db
+					.collection('items')
 					.doc(give.name)
 					.delete();
 			}
@@ -285,28 +289,36 @@ async function messageReceived(message) {
 
 	//GOOD BAND NAME
 	//"[<phrase>|that] would [make|be] a [good|nice] name for a band."
-	if (words.length === 3 & chance(3)) { //made up a % chance to trigger - XCKD Bucket does something more complex
-		if (hasDuplicates(words)) break;
-		
+	if ((words.length === 3) & chance(3) && !hasDuplicates(words)) {
+		//made up a % chance to trigger - XCKD Bucket does something more complex
+
 		let bandName = words.map(x => x[0].toUpperCase() + x.substring(1).toLowerCase()).join(' ');
 		let tla = words.map(x => x[0].toUpperCase()).join('');
-		let out = (chance(50) ? bandName : 'that') + 
+		let out =
+			(chance(50) ? bandName : 'that') +
 			' would ' +
-			(chance(50) ? 'make' : 'be') + 
+			(chance(50) ? 'make' : 'be') +
 			' a ' +
-			(chance(50) ? 'good' : 'nice') + 
+			(chance(50) ? 'good' : 'nice') +
 			' name for a band.';
 		channel.send(out);
 
-		db.collection('bands').doc(uuid()).set({name:bandName, acronym:tla});
+		db.collection('bands')
+			.doc(uuid())
+			.set({ name: bandName, acronym: tla });
 		return;
 	}
 
 	//TLA
 	//"<TLA> could mean <band_name>"
-	let TLA = words.find(x => x.length === 3 && x[0] === x[0].toUpperCase() && x[1] === x[1].toUpperCase() && x[2] === x[2].toUpperCase());
+	let TLA = words.find(
+		x => x.length === 3 && x[0] === x[0].toUpperCase() && x[1] === x[1].toUpperCase() && x[2] === x[2].toUpperCase()
+	);
 	if (TLA) {
-		let bands = await db.collection('bands').where('acronym', '==', TLA).get();
+		let bands = await db
+			.collection('bands')
+			.where('acronym', '==', TLA)
+			.get();
 		if (!bands.empty) {
 			let meaning = getRandomElement(bands.docs).data().name;
 			channel.send(`${TLA} could mean ${meaning}`);
@@ -823,5 +835,5 @@ function getRandomElement(arr) {
 
 // https://stackoverflow.com/questions/7376598/in-javascript-how-do-i-check-if-an-array-has-duplicate-values
 function hasDuplicates(array) {
-	return (new Set(array)).size !== array.length;
+	return new Set(array).size !== array.length;
 }

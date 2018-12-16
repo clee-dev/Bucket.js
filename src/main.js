@@ -22,7 +22,7 @@ var syllable = require('syllable');
 const uuid = require('uuid/v4');
 
 const secrets = require('./secrets.json');
-//const serviceAccount = require('./serviceaccount_key.json'); //uncomment for local testing
+// const serviceAccount = require('./serviceaccount_key.json'); //uncomment for local testing
 const config = require('./config.json');
 
 const client = new Discord.Client();
@@ -150,9 +150,7 @@ async function messageReceived(message) {
 			}
 
 			let str;
-			let giveStr = give
-				? `${getRandomInt(0, 1) === 0 ? 'drops' : `gives ${user.username}`} ${give.name} and `
-				: '';
+			let giveStr = give ? `${chance(50) ? 'drops' : `gives ${user.username}`} ${give.name} and ` : '';
 			switch (getRandomInt(0, 2)) {
 				case 0:
 					str = '*' + giveStr + `now contains ${item}*`;
@@ -179,14 +177,8 @@ async function messageReceived(message) {
 
 	let matchingFactoids = await detectedFactoids(lower);
 	if (matchingFactoids.length) {
-		let lastFactoid = await getLastFactoidData();
-		let f = getRandomElement(matchingFactoids);
-		if (f === lastFactoid && matchingFactoids.length >= 2) f = getRandomElement(matchingFactoids);
-
-		if (matchingFactoids.length) {
-			processFactoid(f, message);
-			return;
-		}
+		processFactoid(matchingFactoids, message);
+		return;
 	}
 
 	//SWAPS
@@ -248,8 +240,10 @@ async function messageReceived(message) {
 			let sarcastic = client.emojis.find(emoji => emoji.name === 'sarcastic');
 			channel.send(
 				Array.from(lower)
-					.map(x => (getRandomInt(1, 2) === 1 ? x.toUpperCase() : x.toLowerCase()))
-					.join('') + sarcastic ? ` ${sarcastic}` : ''
+					.map(x => (chance(50) ? x.toUpperCase() : x.toLowerCase()))
+					.join('') + sarcastic
+					? ` ${sarcastic}`
+					: ''
 			);
 			return;
 		}
@@ -290,7 +284,7 @@ async function messageReceived(message) {
 		channel.send(`*takes a ${coin.name} from ${user.username} and puts it in the swear jar*`);
 		return;
 	}
-	
+
 	if (lower === 'buckety bucket') {
 		channel.send(`${user.username}ity ${user.username}`);
 		return;
@@ -356,8 +350,14 @@ async function mentionedBy(message) {
 		}
 	}
 
+	let matchingFactoids;
 	if (words.length < 2 && lower[0] !== '`') {
-		channel.send(convertVars(message, getRandomElement(vagueResponses)));
+		matchingFactoids = await detectedFactoids(lower);
+		if (matchingFactoids.length) {
+			processFactoid(matchingFactoids, message);
+		} else {
+			channel.send(convertVars(message, getRandomElement(vagueResponses)));
+		}
 		return;
 	}
 
@@ -395,7 +395,7 @@ async function mentionedBy(message) {
 				.delete();
 
 			channel.send(`Okay, ${user.username}, forgetting ${last.X} <${last.Middle}> ${last.Y}`);
-			expDown(message, (sayAnything = true), getRandomInt(0, 1) === 0);
+			expDown(message, (sayAnything = true), chance(50));
 			return;
 		}
 	}
@@ -423,7 +423,7 @@ async function mentionedBy(message) {
 				.delete();
 
 			channel.send(`Okay, ${user.username}, forgetting ${last.X} <${last.Middle}> ${last.Y}`);
-			expDown(message, (sayAnything = true), getRandomInt(0, 1) === 0);
+			expDown(message, (sayAnything = true), chance(50));
 			return;
 		}
 	}
@@ -470,33 +470,34 @@ async function mentionedBy(message) {
 		}
 
 		if (words[0] === 'remember') {
-                        let users = Array.from(client.users)
-                                .map(x => x[1]);
-                        let user = users
-                                .find(x => x.username.toLowerCase() === words[1]);
-                        if (user) {
-                                let messages = await channel.fetchMessages({ limit: 50 });
-                                messages = Array.from(messages)
-                                        .map(x => x[1])
-                                        .filter(x => x.id !== message.id)
-                                        .filter(x => x.author.id === user.id)
-                                        .filter(x =>
-                                                x.content.toLowerCase().includes(
-                                                        content.toLowerCase().substring(content.toLowerCase().indexOf(words[1]) + words[1].length + 1).toLowerCase()
-                                                )
-                                        );
-                                console.log('MESSAGES');
-                                console.log(messages);
-                                if (messages.length) {
-                                        let remember = messages[0].content;
-                                        channel.send(`Okay, remembering ${user.username} said ${remember}`);
-                                        db.collection('quotes')
-                                                .doc(uuid())
-                                                .set({ username: user.username, quote: remember });
-                                        return;
-                                }
-                        }
-                }
+			let users = Array.from(client.users).map(x => x[1]);
+			let user = users.find(x => x.username.toLowerCase() === words[1]);
+			if (user) {
+				let messages = await channel.fetchMessages({ limit: 50 });
+				messages = Array.from(messages)
+					.map(x => x[1])
+					.filter(x => x.id !== message.id)
+					.filter(x => x.author.id === user.id)
+					.filter(x =>
+						x.content.toLowerCase().includes(
+							content
+								.toLowerCase()
+								.substring(content.toLowerCase().indexOf(words[1]) + words[1].length + 1)
+								.toLowerCase()
+						)
+					);
+				console.log('MESSAGES');
+				console.log(messages);
+				if (messages.length) {
+					let remember = messages[0].content;
+					channel.send(`Okay, remembering ${user.username} said ${remember}`);
+					db.collection('quotes')
+						.doc(uuid())
+						.set({ username: user.username, quote: remember });
+					return;
+				}
+			}
+		}
 	}
 
 	if (lower.startsWith('do you know')) {
@@ -505,16 +506,9 @@ async function mentionedBy(message) {
 	}
 
 	//process factoid
-	let matchingFactoids = await detectedFactoids(lower);
+	matchingFactoids = await detectedFactoids(lower);
 	if (matchingFactoids.length) {
-		let lastFactoid = await getLastFactoidData();
-		let f = getRandomElement(matchingFactoids);
-		if (f === lastFactoid && matchingFactoids.length >= 2) f = getRandomElement(matchingFactoids);
-
-		if (matchingFactoids.length) {
-			processFactoid(f, message);
-			return;
-		}
+		processFactoid(matchingFactoids, message);
 		return;
 	}
 
@@ -565,7 +559,7 @@ async function learnNewFactoid(x, mid, y, user, channel) {
 				user: { id: user.id, username: user.username },
 			});
 		setLastLearnedFactoid(id);
-		channel.send(`Okay, ${user.username}${getRandomInt(1, 2) === 1 ? ", I'll remember that." : ''}`);
+		channel.send(`Okay, ${user.username}${chance(50) ? ", I'll remember that." : ''}`);
 	}
 }
 
@@ -655,7 +649,11 @@ function escapeRegExp(string) {
 	return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 }
 
-function processFactoid(factoid, message) {
+async function processFactoid(matchingFactoids, message) {
+	let lastFactoid = await getLastFactoidData();
+	let factoid = getRandomElement(matchingFactoids);
+	if (factoid === lastFactoid && matchingFactoids.length >= 2) f = getRandomElement(matchingFactoids);
+
 	let channel = message.channel;
 	let x = factoid.X;
 	let mid = factoid.Middle;

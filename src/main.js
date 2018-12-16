@@ -513,7 +513,7 @@ async function mentionedBy(message) {
 			}*`
 		);
 		db.collection('items')
-			.doc('give')
+			.doc(give.name)
 			.delete();
 		return;
 	}

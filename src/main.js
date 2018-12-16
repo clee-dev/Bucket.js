@@ -174,7 +174,6 @@ async function messageReceived(message) {
 	}
 
 	//FACTOIDS
-
 	let matchingFactoids = await detectedFactoids(lower);
 	if (matchingFactoids.length) {
 		processFactoid(matchingFactoids, message);

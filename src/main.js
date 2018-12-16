@@ -241,9 +241,7 @@ async function messageReceived(message) {
 			channel.send(
 				Array.from(lower)
 					.map(x => (chance(50) ? x.toUpperCase() : x.toLowerCase()))
-					.join('') + sarcastic
-					? ` ${sarcastic}`
-					: ''
+					.join('') + (sarcastic ? ` ${sarcastic}` : '')
 			);
 			return;
 		}

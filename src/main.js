@@ -700,7 +700,7 @@ function escapeRegExp(string) {
 async function processFactoid(matchingFactoids, message) {
 	let lastFactoid = await getLastFactoidData();
 	let factoid = getRandomElement(matchingFactoids);
-	if (factoid === lastFactoid && matchingFactoids.length >= 2) f = getRandomElement(matchingFactoids);
+	if (factoid === lastFactoid && matchingFactoids.length >= 2) factoid = getRandomElement(matchingFactoids);
 
 	let channel = message.channel;
 	let x = factoid.X;

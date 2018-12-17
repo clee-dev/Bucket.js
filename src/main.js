@@ -273,7 +273,9 @@ async function messageReceived(message) {
 	//SWEARJAR
 	if (!message.embeds.length && filter.isProfane(lower)) {
 		//*takes a quarter | dime from ${user} and puts it in the swear jar*
-		let coin = getRandomElement([{ name: 'quarter', value: 0.25 }, { name: 'dime', value: 0.1 }]);
+		let coin = getRandomElement([{ name: 'quarter', value: 25 }, { name: 'dime', value: 10 }]);
+		//represented in pennies because fuck javascript http://adripofjavascript.com/blog/drips/avoiding-problems-with-decimal-math-in-javascript.html
+		
 		incrementDocField(db.collection('swearjar').doc(user.id), 'total', coin.value);
 		channel.send(`*takes a ${coin.name} from ${user.username} and puts it in the swear jar*`);
 		return;

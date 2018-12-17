@@ -7,3 +7,7 @@ Buckety bucket
 I don't actually know perl, so feel free to help me decipher [the original source](https://github.com/zigdon/xkcd-Bucket/blob/master/bucket.pl) to implement the [list of features](http://wiki.xkcd.com/irc/Bucket).
 
 *Bucket.js* is GPLv3. Since I used zigdon's source code for reference, even though it's not a port, this could be considered a 'derivative'.
+
+---
+
+I still need to write more things here like how to configure secrets.json & config.json, install, & run

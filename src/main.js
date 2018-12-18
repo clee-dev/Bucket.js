@@ -296,12 +296,14 @@ async function messageReceived(message) {
 		let bandName = words.map(x => x[0].toUpperCase() + x.substring(1).toLowerCase()).join(' ');
 		let tla = words.map(x => x[0].toUpperCase()).join('');
 		let out =
-			(chance(50) ? bandName : 'that') +
+			(chance(50) ? bandName : 'That') +
 			' would ' +
 			(chance(50) ? 'make' : 'be') +
 			' a ' +
 			(chance(50) ? 'good' : 'nice') +
-			' name for a band.';
+			' name for a ' + 
+		    	(chance(50) ? 'rock ' : '' ) + 
+		    	'band.';
 		channel.send(out);
 
 		db.collection('bands')

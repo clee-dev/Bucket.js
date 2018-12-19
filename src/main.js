@@ -714,9 +714,13 @@ function escapeRegExp(string) {
 }
 
 async function processFactoid(matchingFactoids, message) {
+	let middleRegex = /^[\^\_]/g
+	if(!chance(1)) matchingFactoids = matchingFactoids.filter(x => x.Middle.replace(middleRegex, '') !== 'swap');
+	
 	let lastFactoid = await getLastFactoidData();
+	
 	let factoid = getRandomElement(matchingFactoids);
-	if (factoid === lastFactoid && matchingFactoids.length >= 2) factoid = getRandomElement(matchingFactoids);
+	if (factoid === lastFactoid && matchingFactoids.length >= 2) factoid = getRandomElement(matchingFactoids); //this could be done better
 
 	let channel = message.channel;
 	let x = factoid.X;
@@ -725,7 +729,7 @@ async function processFactoid(matchingFactoids, message) {
 
 	//remove starting _ or ^
 	//TODO: Figure out what the "^" prefix does. Case-sensitivity maybe?
-	switch (factoid.Middle.replace(/^[\^\_]/g, '')) {
+	switch (factoid.Middle.replace(middleRegex, '')) {
 		case "'s":
 			channel.send(`${x}'s ${convertVars(message, y)}`);
 			setLastFactoid(factoid.id);
@@ -739,11 +743,9 @@ async function processFactoid(matchingFactoids, message) {
 			setLastFactoid(factoid.id);
 			break;
 		case 'swap':
-			if (chance(1)) {
-				let r = new RegExp(escapeRegExp(x), 'gi');
-				channel.send(`${message.content.replace(r, convertVars(message, y))}`);
-				setLastFactoid(factoid.id);
-			}
+			let r = new RegExp(escapeRegExp(x), 'gi');
+			channel.send(`${message.content.replace(r, convertVars(message, y))}`);
+			setLastFactoid(factoid.id);
 			break;
 		case 'is':
 		case 'are':

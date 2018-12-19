@@ -20,6 +20,7 @@ var Filter = require('bad-words');
 const admin = require('firebase-admin');
 var syllable = require('syllable');
 const uuid = require('uuid/v4');
+var validUrl = require('valid-url');
 
 const secrets = require('./secrets.json');
 // const serviceAccount = require('./serviceaccount_key.json'); //uncomment for local testing
@@ -47,8 +48,9 @@ client.login(secrets.bucketToken);
 const regex = {
 	punct: /[\?!.;'"():]+/gm,
 	punctNoApostrophe: /[\?!.; "():]+/gm,
-	punctSpace: /[\?!.; '"():]+/gm, // /[^\w]+/gm,
+	words: /[^\w'-<>]+|_+/gm,
 };
+
 const vagueResponses = [
 	'Error 42: No such factoid. Please contact administrator of current universe',
 	'¯\\\\(°_o)/¯', //Discord escapes \, so I need to doublescape
@@ -70,13 +72,26 @@ const vagueResponses = [
 	'\\o/',
 ];
 
+function getWords(s) {
+	return s
+		.split(' ')
+		.filter(x => !validUrl.isUri(x))
+		.join(' ')
+		.split(regex.words)
+		.filter(x => x);
+}
+
+function filterNonWords(s) {
+	return getWords(s).join(' ');
+}
+
 async function messageReceived(message) {
 	if (!message.guild) return; //no DMs
 
 	let user = message.author;
 	let channel = message.channel;
 	let lower = message.content.toLowerCase();
-	let words = lower.split(regex.punctSpace).filter(x => x);
+	let words = getWords(lower);
 
 	if (config.debug && !secrets.channels[channel.name]) return; //!secrets.admins[user.username]) return;
 	if (message.author.id === client.user.id) return;
@@ -99,7 +114,7 @@ async function messageReceived(message) {
 		return;
 	}
 
-	learn(words);
+	if (!config.debug) learn(words);
 
 	let silenced = await getSilencedState();
 	if (silenced) return;
@@ -284,8 +299,6 @@ async function messageReceived(message) {
 		return;
 	}
 
-	if (message.embeds.length) return;
-
 	//GOOD BAND NAME
 	//"[<phrase>|that] would [make|be] a [good|nice] name for a band."
 	if ((words.length === 3) & chance(3) && !hasDuplicates(words)) {
@@ -347,7 +360,7 @@ async function mentionedBy(message) {
 	else content = content.substring(0, content.lastIndexOf(', bucket'));
 
 	let lower = content.toLowerCase();
-	let words = lower.split(regex.punctSpace).filter(x => x);
+	let words = getWords(lower);
 
 	let silenced = await getSilencedState();
 
@@ -379,7 +392,7 @@ async function mentionedBy(message) {
 		return;
 	}
 
-	if (lower.replace(regex.punct, '') === 'come back' && silenced) {
+	if (filterNonWords(lower) === 'come back' && silenced) {
 		setSilencedState(false);
 		channel.send('\\o/');
 		return;
@@ -523,7 +536,7 @@ async function mentionedBy(message) {
 		lower === 'i want a present' ||
 		(lower.startsWith('i want a present') && lower.length === 'i want a present'.length + 1) ||
 		(lower === 'give me a present' ||
-			(lower.startsWIth('give me a present') && lower.length === 'give me a present'.length + 1))
+			(lower.startsWith('give me a present') && lower.length === 'give me a present'.length + 1))
 	) {
 		let inv = await getInventory();
 		let give = getRandomElement(inv);
@@ -563,7 +576,7 @@ async function mentionedBy(message) {
 			lower = lower.substring(7);
 			lower = lower.substring(lower.indexOf(' ') + 1);
 		}
-		lower = lower.replace(regex.punct, '');
+		lower = filterNonWords(lower);
 		let X = lower.substring(0, lower.indexOf(' or '));
 		let Y = lower.substring(lower.indexOf(' or ') + 4);
 		channel.send(getRandomElement([X, Y]));

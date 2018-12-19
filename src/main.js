@@ -178,8 +178,7 @@ async function messageReceived(message) {
 				.set({ name: item, user: { id: user.id, username: user.username } });
 
 			if (give) {
-				await db
-					.collection('items')
+				db.collection('items')
 					.doc(give.name)
 					.delete();
 			}

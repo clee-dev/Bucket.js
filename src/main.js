@@ -48,7 +48,7 @@ client.login(secrets.bucketToken);
 const regex = {
 	punct: /[\?!.;'"():]+/gm,
 	punctNoApostrophe: /[\?!.; "():]+/gm,
-	words: /[^\w'-<>_]+/gm,
+	words: /[^\w'-<>]+/gm,
 };
 
 const vagueResponses = [

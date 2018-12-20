@@ -565,6 +565,16 @@ async function mentionedBy(message) {
 		channel.send('No, but if you hum a few bars I can fake it.');
 		return;
 	}
+	
+	if (lower.startsWith('how much is in the swear jar') && words.length === 7) {
+		let swearjar = await db.collection('swearjar').get();
+		let totalPennies = 0;
+		if (!swearjar.empty)
+			swearjar.docs.forEach(x => totalPennies += x.data().total);
+		
+		channel.send(`The swear jar currently holds ${(totalPennies / 100).toLocaleString("en-US", {style:"currency", currency:"USD"})}`);
+		return;
+	}
 
 	//process factoid
 	matchingFactoids = await detectedFactoids(lower);

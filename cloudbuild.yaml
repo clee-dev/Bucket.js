@@ -1,3 +1,3 @@
 steps:
 - name: gcr.io/cloud-builders/gcloud
-  args: ['compute', 'ssh', '${_USER}@bucket', '--zone', 'us-central1-c', '--command', 'cd Bucket.js/src; git pull; forever stop 0; forever start main.js; exit']
+  args: ['compute', 'ssh', '${_USER}@${_INSTANCE}', '--zone', '${_ZONE}', '--command', 'cd Bucket.js/src; git pull; forever stop 0; forever start main.js; exit']

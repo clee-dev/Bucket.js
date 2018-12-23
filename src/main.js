@@ -498,11 +498,11 @@ async function mentionedBy(message) {
 			if (user) {
 				let quotes = await db
 					.collection('quotes')
-					.where('username', '==', user.username)
+					.where('user.username', '==', user.username)
 					.get();
 				if (!quotes.empty) {
 					let quote = getRandomElement(quotes.docs).data().quote;
-					channel.send(`${name}: ${quote}`);
+					channel.send(`${user.username}: ${quote}`);
 					return;
 				} else {
 					channel.send(`I don't have any quotes for ${name}`);

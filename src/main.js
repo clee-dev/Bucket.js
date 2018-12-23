@@ -289,7 +289,7 @@ async function messageReceived(message) {
 		//*takes a quarter | dime from ${user} and puts it in the swear jar*
 		let coin = getRandomElement([{ name: 'quarter', value: 25 }, { name: 'dime', value: 10 }]);
 		//represented in pennies because fuck javascript http://adripofjavascript.com/blog/drips/avoiding-problems-with-decimal-math-in-javascript.html
-		
+
 		incrementDocField(db.collection('swearjar').doc(user.id), 'total', coin.value);
 		channel.send(`*takes a ${coin.name} from ${user.username} and puts it in the swear jar*`);
 		return;
@@ -313,9 +313,9 @@ async function messageReceived(message) {
 			(chance(50) ? 'make' : 'be') +
 			' a ' +
 			(chance(50) ? 'good' : 'nice') +
-			' name for a ' + 
-		    	(chance(50) ? 'rock ' : '' ) + 
-		    	'band.';
+			' name for a ' +
+			(chance(50) ? 'rock ' : '') +
+			'band.';
 		channel.send(out);
 
 		db.collection('bands')
@@ -478,8 +478,8 @@ async function mentionedBy(message) {
 		return;
 	}
 
-	//being taught short factoids
 	if (words.length >= 2) {
+		//being taught short factoids
 		if (words[1] === 'is' || words[1] === 'are') {
 			learnNewFactoid(
 				words[0],
@@ -493,15 +493,22 @@ async function mentionedBy(message) {
 
 		if (words[1] === 'quotes') {
 			let name = words[0];
-			let quotes = await db
-				.collection('quotes')
-				.where('username', '==', name)
-				.get();
-			if (!quotes.empty) {
-				let quote = getRandomElement(quotes.docs).data().quote;
-				channel.send(`${name}: ${quote}`);
-				return;
-			} else channel.send(`I don't have any quotes for ${name}`);
+			let users = Array.from(client.users).map(x => x[1]);
+			let user = users.find(x => x.username.toLowerCase() === name);
+			if (user) {
+				let quotes = await db
+					.collection('quotes')
+					.where('username', '==', user.username)
+					.get();
+				if (!quotes.empty) {
+					let quote = getRandomElement(quotes.docs).data().quote;
+					channel.send(`${name}: ${quote}`);
+					return;
+				} else {
+					channel.send(`I don't have any quotes for ${name}`);
+					return;
+				}
+			}
 		}
 
 		if (words[0] === 'remember') {
@@ -528,7 +535,7 @@ async function mentionedBy(message) {
 					channel.send(`Okay, remembering ${user.username} said ${remember}`);
 					db.collection('quotes')
 						.doc(uuid())
-						.set({ username: user.username, quote: remember });
+						.set({ user: { id: user.id, username: user.username }, quote: remember });
 					return;
 				}
 			}
@@ -565,14 +572,18 @@ async function mentionedBy(message) {
 		channel.send('No, but if you hum a few bars I can fake it.');
 		return;
 	}
-	
+
 	if (lower.startsWith('how much is in the swear jar') && words.length === 7) {
 		let swearjar = await db.collection('swearjar').get();
 		let totalPennies = 0;
-		if (!swearjar.empty)
-			swearjar.docs.forEach(x => totalPennies += x.data().total);
-		
-		channel.send(`The swear jar currently holds ${(totalPennies / 100).toLocaleString("en-US", {style:"currency", currency:"USD"})}`);
+		if (!swearjar.empty) swearjar.docs.forEach(x => (totalPennies += x.data().total));
+
+		channel.send(
+			`The swear jar currently holds ${(totalPennies / 100).toLocaleString('en-US', {
+				style: 'currency',
+				currency: 'USD',
+			})}`
+		);
 		return;
 	}
 
@@ -724,11 +735,11 @@ function escapeRegExp(string) {
 }
 
 async function processFactoid(matchingFactoids, message) {
-	let middleRegex = /^[\^\_]/g
-	if(!chance(1)) matchingFactoids = matchingFactoids.filter(x => x.Middle.replace(middleRegex, '') !== 'swap');
-	
+	let middleRegex = /^[\^\_]/g;
+	if (!chance(1)) matchingFactoids = matchingFactoids.filter(x => x.Middle.replace(middleRegex, '') !== 'swap');
+
 	let lastFactoid = await getLastFactoidData();
-	
+
 	let factoid = getRandomElement(matchingFactoids);
 	if (factoid === lastFactoid && matchingFactoids.length >= 2) factoid = getRandomElement(matchingFactoids); //this could be done better
 

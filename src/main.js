@@ -246,7 +246,7 @@ async function messageReceived(message) {
 		}
 
 		//sarcasm -> SArcAsM (3% CHANCE)
-		if (words.length <= 6 && chance(2)) {
+		if (words.length > 0 && words.length <= 6 && chance(2)) {
 			let sarcastic = client.emojis.find(emoji => emoji.name === 'sarcastic');
 			channel.send(
 				Array.from(lower)

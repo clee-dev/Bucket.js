@@ -214,7 +214,7 @@ async function messageReceived(message) {
 	}
 
 	//SWAPS
-	if (!message.embeds.length) {
+	if (words.length > 0) {
 		//EX -> SEX
 		if (words.some(x => x.startsWith('ex')) && chance(1)) {
 			channel.send(message.content.replace('ex', 'sex').replace('Ex', 'Sex'));
@@ -246,7 +246,7 @@ async function messageReceived(message) {
 		}
 
 		//sarcasm -> SArcAsM (3% CHANCE)
-		if (words.length > 0 && words.length <= 6 && chance(2)) {
+		if (words.length <= 6 && chance(2)) {
 			let sarcastic = client.emojis.find(emoji => emoji.name === 'sarcastic');
 			channel.send(
 				Array.from(lower)

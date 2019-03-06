@@ -214,7 +214,7 @@ async function messageReceived(message) {
 	}
 
 	//SWAPS
-	if (!message.embeds.length) {
+	if (words.length > 0) {
 		//EX -> SEX
 		if (words.some(x => x.startsWith('ex')) && chance(1)) {
 			channel.send(message.content.replace('ex', 'sex').replace('Ex', 'Sex'));

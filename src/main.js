@@ -358,11 +358,11 @@ async function mentionedBy(message) {
 	let channel = message.channel;
 
 	let content = message.content;
-	if (content.startsWith('bucket') || content.startsWith(`<@${client.user.id}>`))
-		content = content.substring(content.indexOf(' ') + 1);
-	else content = content.substring(0, content.lastIndexOf(', bucket'));
-
 	let lower = content.toLowerCase();
+	if (lower.startsWith('bucket') || content.startsWith(`<@${client.user.id}>`))
+		lower = lower.substring(lower.indexOf(' ') + 1);
+	else lower = lower.substring(0, lower.lastIndexOf(', bucket'));
+
 	let words = getWords(lower);
 
 	let silenced = await getSilencedState();

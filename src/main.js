@@ -256,7 +256,7 @@ async function messageReceived(message) {
 						.join('') + (sarcastic ? ` ${sarcastic}` : '');
 				attemptsToBeFunny++;
 			}
-			while(sarcasm === lower && attemptsToBeFunny < 3);
+			while(sarcasm === message.content && attemptsToBeFunny < 3);
 				
 			channel.send(sarcasm);
 			return;

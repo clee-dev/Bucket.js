@@ -257,8 +257,9 @@ async function messageReceived(message) {
 				attemptsToBeFunny++;
 			}
 			while(sarcasm === message.content && attemptsToBeFunny < 3);
-				
-			channel.send(sarcasm);
+			
+			if(sarcasm)
+				channel.send(sarcasm);
 			return;
 		}
 	}

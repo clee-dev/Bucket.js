@@ -245,14 +245,20 @@ async function messageReceived(message) {
 			return;
 		}
 
-		//sarcasm -> SArcAsM (3% CHANCE)
+		//sarcasm -> SArcAsM (2% CHANCE)
 		if (words.length <= 6 && chance(2)) {
 			let sarcastic = client.emojis.find(emoji => emoji.name === 'sarcastic');
-			channel.send(
-				Array.from(lower)
-					.map(x => (chance(50) ? x.toUpperCase() : x.toLowerCase()))
-					.join('') + (sarcastic ? ` ${sarcastic}` : '')
-			);
+			let sarcasm = '';
+			let attemptsToBeFunny = 0;
+			do {
+				sarcasm = Array.from(lower)
+						.map(x => (chance(50) ? x.toUpperCase() : x.toLowerCase()))
+						.join('') + (sarcastic ? ` ${sarcastic}` : '');
+				attemptsToBeFunny++;
+			}
+			while(sarcasm === lower && attemptsToBeFunny < 3);
+				
+			channel.send(sarcasm);
 			return;
 		}
 	}

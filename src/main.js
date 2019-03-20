@@ -89,6 +89,7 @@ async function messageReceived(message) {
 	if (!message.guild) return; //no DMs
 
 	let user = message.author;
+	user.name = user.nickname ? user.nickname : user.username;
 	let channel = message.channel;
 	let lower = message.content.toLowerCase();
 	let words = getWords(lower);
@@ -99,7 +100,7 @@ async function messageReceived(message) {
 	//if I haven't seen this user before, add them to my database
 	db.collection('users')
 		.doc(user.id)
-		.set({ name: user.username });
+		.set({ username: user.username, name: user.name });
 
 	//check if mentioned
 	//"@Bucket *" || "bucket,*" || "bucket:*" || "*, bucket" || "*,bucket"
@@ -167,7 +168,7 @@ async function messageReceived(message) {
 				give = getRandomElement(inventory);
 			}
 
-			let giveStr = give ? `${chance(50) ? 'drops' : `gives ${user.username}`} ${give.name} and ` : '';
+			let giveStr = give ? `${chance(50) ? 'drops' : `gives ${user.name}`} ${give.name} and ` : '';
 			let str =
 				'*' + giveStr + getRandomElement(['now contains', 'is now carrying', 'is now holding']) + ` ${item}*`;
 			channel.send(str);
@@ -175,7 +176,7 @@ async function messageReceived(message) {
 
 			db.collection('items')
 				.doc(item)
-				.set({ name: item, user: { id: user.id, username: user.username } });
+				.set({ name: item, user: { id: user.id, username: user.username, name: user.name } });
 
 			if (give) {
 				db.collection('items')
@@ -291,12 +292,12 @@ async function messageReceived(message) {
 		//represented in pennies because fuck javascript http://adripofjavascript.com/blog/drips/avoiding-problems-with-decimal-math-in-javascript.html
 
 		incrementDocField(db.collection('swearjar').doc(user.id), 'total', coin.value);
-		channel.send(`*takes a ${coin.name} from ${user.username} and puts it in the swear jar*`);
+		channel.send(`*takes a ${coin.name} from ${user.name} and puts it in the swear jar*`);
 		return;
 	}
 
 	if (lower === 'buckety bucket') {
-		channel.send(`${user.username}ity ${user.username}`);
+		channel.send(`${user.name}ity ${user.name}`);
 		return;
 	}
 
@@ -355,14 +356,15 @@ async function messageReceived(message) {
 //"@Bucket *" || "bucket,*" || "bucket:*" || "*, bucket" || "*,bucket"
 async function mentionedBy(message) {
 	let user = message.author;
+	user.name = user.nickname ? user.nickname : user.username;
 	let channel = message.channel;
 
 	let content = message.content;
-	let lower = content.toLowerCase();
-	if (lower.startsWith('bucket') || content.startsWith(`<@${client.user.id}>`))
-		lower = lower.substring(lower.indexOf(' ') + 1);
-	else lower = lower.substring(0, lower.lastIndexOf(', bucket'));
+	if (content.startsWith('bucket') || content.startsWith(`<@${client.user.id}>`))
+		content = content.substring(content.indexOf(' ') + 1);
+	else content = content.substring(0, content.lastIndexOf(', bucket'));
 
+	let lower = content.toLowerCase();
 	let words = getWords(lower);
 
 	let silenced = await getSilencedState();
@@ -374,8 +376,8 @@ async function mentionedBy(message) {
 			let inventory = await getInventory();
 			inventory.forEach(item => {
 				if (item.name.startsWith('his') || item.name.startsWith('her'))
-					out += `${item.user.username}'s ${item.name.substring(4)}, `;
-				else if (item.name.startsWith('their')) out += `${item.user.username}'s ${item.name.substring(6)}, `;
+					out += `${item.user.name}'s ${item.name.substring(4)}, `;
+				else if (item.name.startsWith('their')) out += `${item.user.name}'s ${item.name.substring(6)}, `;
 				else out += item.name + ', ';
 			});
 			out = out === '' ? "I don't have anything :(" : out.substring(0, out.length - 2);
@@ -428,7 +430,7 @@ async function mentionedBy(message) {
 				.doc('lastLearnedFactoid')
 				.delete();
 
-			channel.send(`Okay, ${user.username}, forgetting ${last.X} <${last.Middle}> ${last.Y}`);
+			channel.send(`Okay, ${user.name}, forgetting ${last.X} <${last.Middle}> ${last.Y}`);
 			expDown(message, (sayAnything = true), chance(50));
 			return;
 		}
@@ -456,7 +458,7 @@ async function mentionedBy(message) {
 				.doc('lastFactoid')
 				.delete();
 
-			channel.send(`Okay, ${user.username}, forgetting ${last.X} <${last.Middle}> ${last.Y}`);
+			channel.send(`Okay, ${user.name}, forgetting ${last.X} <${last.Middle}> ${last.Y}`);
 			expDown(message, (sayAnything = true), chance(50));
 			return;
 		}
@@ -498,11 +500,11 @@ async function mentionedBy(message) {
 			if (user) {
 				let quotes = await db
 					.collection('quotes')
-					.where('user.username', '==', user.username)
+					.where('user.name', '==', user.name)
 					.get();
 				if (!quotes.empty) {
 					let quote = getRandomElement(quotes.docs).data().quote;
-					channel.send(`${user.username}: ${quote}`);
+					channel.send(`${user.name}: ${quote}`);
 					return;
 				} else {
 					channel.send(`I don't have any quotes for ${name}`);
@@ -532,10 +534,10 @@ async function mentionedBy(message) {
 				console.log(messages);
 				if (messages.length) {
 					let remember = messages[0].content;
-					channel.send(`Okay, remembering ${user.username} said ${remember}`);
+					channel.send(`Okay, remembering ${user.name} said ${remember}`);
 					db.collection('quotes')
 						.doc(uuid())
-						.set({ user: { id: user.id, username: user.username }, quote: remember });
+						.set({ user: { id: user.id, username: user.username, name: user.name }, quote: remember });
 					return;
 				}
 			}
@@ -552,13 +554,13 @@ async function mentionedBy(message) {
 		let give = getRandomElement(inv);
 
 		channel.send(
-			`*gives ${user.username} ${
+			`*gives ${user.name} ${
 				give.name.startsWith('his')
-					? give.name.replace('his', give.user.username)
+					? give.name.replace('his', give.user.name)
 					: give.name.startsWith('her')
-					? give.name.replace('her', give.user.username)
+					? give.name.replace('her', give.user.name)
 					: give.name.startsWith('their')
-					? give.name.replace('their', give.user.username)
+					? give.name.replace('their', give.user.name)
 					: give.name
 			}*`
 		);
@@ -632,7 +634,7 @@ async function learnNewFactoid(x, mid, y, user, channel) {
 	let known = await getFactoid(x, mid, y);
 
 	if (known) {
-		channel.send(`I already do that, ${user.username}`);
+		channel.send(`I already do that, ${user.name}`);
 	} else {
 		let id = uuid();
 		await db
@@ -642,10 +644,10 @@ async function learnNewFactoid(x, mid, y, user, channel) {
 				X: x,
 				Middle: mid,
 				Y: y,
-				user: { id: user.id, username: user.username },
+				user: { id: user.id, username: user.username, name: user.name },
 			});
 		setLastLearnedFactoid(id);
-		channel.send(`Okay, ${user.username}${chance(50) ? ", I'll remember that." : ''}`);
+		channel.send(`Okay, ${user.name}${chance(50) ? ", I'll remember that." : ''}`);
 	}
 }
 

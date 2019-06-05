@@ -4,7 +4,7 @@
 	"description": "Buckety bucket",
 	"main": "main.js",
 	"dependencies": {
-		"bad-words": "^3.0.0",
+		"bad-words": "^3.0.2",
 		"discord.js": "^11.4.2",
 		"firebase-admin": "^6.3.0",
 		"syllable": "^3.2.0",

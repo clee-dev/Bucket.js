@@ -227,12 +227,6 @@ async function messageReceived(message) {
 			return;
 		}
 
-		//IDEA -> IDEAL (30% CHANCE)
-		if (words.some(x => x === 'idea') && chance(1)) {
-			channel.send(message.content.replace('idea', 'ideal').replace('Idea', 'Ideal'));
-			return;
-		}
-
 		//THE FUCKING -> FUCKING THE
 		if (lower.includes('the fucking') && chance(100)) {
 			channel.send(message.content.replace('the fucking', 'fucking the'));
@@ -245,8 +239,9 @@ async function messageReceived(message) {
 			return;
 		}
 
-		//sarcasm -> SArcAsM (3% CHANCE)
-		if (words.length <= 6 && chance(2)) {
+		//sarcasm -> SArcAsM (2% CHANCE)
+		//disabled because it happens way too much, even at 2%
+		if (false && words.length <= 6 && chance(2)) {
 			let sarcastic = client.emojis.find(emoji => emoji.name === 'sarcastic');
 			channel.send(
 				Array.from(lower)
@@ -265,7 +260,8 @@ async function messageReceived(message) {
 	}
 
 	//ANY WORD SYLLABLES >= 3 (3% CHANCE) -> "FE FI FO"
-	if (!message.embeds.length && words.some(x => syllable(x) >= 3) && chance(3)) {
+	//disabled because not funny enough
+	if (false && !message.embeds.length && words.some(x => syllable(x) >= 3) && chance(3)) {
 		let word = words.find(x => syllable(x) >= 3);
 		let sub = '';
 		let sub2 = '';
@@ -285,7 +281,8 @@ async function messageReceived(message) {
 	}
 
 	//SWEARJAR
-	if (!message.embeds.length && filter.isProfane(lower)) {
+	//discontinued until I build a better bad words regex
+	if (false && !message.embeds.length && filter.isProfane(lower)) {
 		//*takes a quarter | dime from ${user} and puts it in the swear jar*
 		let coin = getRandomElement([{ name: 'quarter', value: 25 }, { name: 'dime', value: 10 }]);
 		//represented in pennies because fuck javascript http://adripofjavascript.com/blog/drips/avoiding-problems-with-decimal-math-in-javascript.html
@@ -326,8 +323,9 @@ async function messageReceived(message) {
 
 	//TLA
 	//"<TLA> could mean <band_name>"
+	//TODO: figure out why this never happens?
 	let TLA = words.find(
-		x => x.length === 3 && x[0] === x[0].toUpperCase() && x[1] === x[1].toUpperCase() && x[2] === x[2].toUpperCase()
+		x => x.length === 3 && x === x.toUpperCase()
 	);
 	if (TLA) {
 		let bands = await db

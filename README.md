@@ -7,4 +7,6 @@ I don't actually know perl, so feel free to help me decipher [the original sourc
 
 ---
 
-I still need to write more things here like how to configure secrets.json & config.json, install, & run
+I still need to write more things here like how to configure secrets.json & config.json, install, & run. In the meantime, here's a handy dandy button to run Bucket:
+
+[![Run on Google Cloud](https://storage.googleapis.com/cloudrun/button.svg)](https://console.cloud.google.com/cloudshell/editor?shellonly=true&cloudshell_image=gcr.io/cloudrun/button&cloudshell_git_repo=https://github.com/clee-dev/Bucket.js.git)

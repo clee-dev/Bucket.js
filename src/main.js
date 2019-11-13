@@ -297,6 +297,14 @@ async function messageReceived(message) {
 		return;
 	}
 
+	//3-WORD TUMBLR
+	//chance that a message with 3 words makes a link to 3words.tumblr.com
+	if ((words.length === 3) & chance(3) && !hasDuplicates(words)) {
+		//made up a % chance to trigger - XCKD Bucket does something more complex
+		channel.send(`${words.join('')}.tumblr.com`)
+		return;
+	}
+
 	//GOOD BAND NAME
 	//"[<phrase>|that] would [make|be] a [good|nice] name for a band."
 	if ((words.length === 3) & chance(3) && !hasDuplicates(words)) {

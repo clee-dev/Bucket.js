@@ -299,7 +299,7 @@ async function messageReceived(message) {
 
 	//GOOD BAND NAME
 	//"[<phrase>|that] would [make|be] a [good|nice] name for a band."
-	if ((words.length === 3) & chance(3) && !hasDuplicates(words)) {
+	if ((words.length === 3) && chance(3) && !hasDuplicates(words)) {
 		//made up a % chance to trigger - XCKD Bucket does something more complex
 
 		let bandName = words.map(x => x[0].toUpperCase() + x.substring(1).toLowerCase()).join(' ');

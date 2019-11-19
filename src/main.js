@@ -301,7 +301,7 @@ async function messageReceived(message) {
 	//chance that a message with 3 words makes a link to 3words.tumblr.com
 	if ((words.length === 3) & chance(3) && !hasDuplicates(words)) {
 		//made up a % chance to trigger - XCKD Bucket has a config database entry for % chance
-		channel.send(`${words.join('')}.tumblr.com`)
+		channel.send(`https://${words.join('')}.tumblr.com`)
 		return;
 	}
 

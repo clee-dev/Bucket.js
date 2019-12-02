@@ -37,6 +37,8 @@ var db = admin.firestore();
 
 client.on('ready', () => {
 	console.log(`Logged in as ${client.user.tag}!`);
+	const botspamChannel = client.channels.find(x => x.name === 'botspam');
+	botspamChannel.send('I just restarted!');
 });
 
 client.on('message', msg => {

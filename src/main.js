@@ -548,12 +548,14 @@ async function mentionedBy(message) {
 		}
 	}
 
-	if (
-		lower === 'i want a present' ||
-		(lower.startsWith('i want a present') && lower.length === 'i want a present'.length + 1) ||
-		(lower === 'give me a present' ||
-			(lower.startsWith('give me a present') && lower.length === 'give me a present'.length + 1))
-	) {
+	// needs to match:
+	// 'i want a present'
+	// 'give me a present'
+	// 'give me a gift'
+	// 'i want a gift'
+	// allow punctuation after
+	const giveItemRegex = /^(i want a|give me a) (present|gift)[.?!]*$/;
+	if (lower.test(giveItemRegex)) {
 		let inv = await getInventory();
 		let give = getRandomElement(inv);
 

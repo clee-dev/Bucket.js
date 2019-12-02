@@ -555,7 +555,7 @@ async function mentionedBy(message) {
 	// 'i want a gift'
 	// allow punctuation after
 	const giveItemRegex = /^(i want a|give me a) (present|gift)[.?!]*$/;
-	if (lower.test(giveItemRegex)) {
+	if (giveItemRegex.test(lower)) {
 		let inv = await getInventory();
 		let give = getRandomElement(inv);
 

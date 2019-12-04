@@ -37,8 +37,18 @@ var db = admin.firestore();
 
 client.on('ready', () => {
 	console.log(`Logged in as ${client.user.tag}!`);
-	const botspamChannel = client.channels.find(x => x.name === 'botspam');
-	botspamChannel.send('I just restarted!');
+
+	const debugChannelIDs = Object.values(secrets.channels);
+	const debugChannels = client.channels.filter(c => debugChannelIDs.includes(c.id));
+
+	// '<@id1> <@id2> <@id3>'
+	// 'I just restarted!'
+	const adminIDs = Object.values(secrets.admins);
+	const adminsPing = adminIDs.map(id => '<@' + id + '>').join(' ');
+	const message = adminsPing + '\r\n' +
+					'I just restarted!';
+	
+	debugChannels.forEach(channel => channel.send(message));
 });
 
 client.on('message', msg => {

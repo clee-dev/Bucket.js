@@ -202,7 +202,8 @@ async function messageReceived(message) {
 	}
 
 	//*USES X*
-	if ((lower.startsWith('*uses ') || lower.startsWith('_uses ')) && (lower.endsWith('*') || lower.endsWith('_'))) {
+	const pokemonRegex = /^\*uses .+\*|_uses .+_$/;
+	if (pokemonRegex.test(lower)) {
 		switch (getRandomInt(1, 4)) {
 			case 1:
 				channel.send('It has no effect.');

@@ -421,19 +421,21 @@ async function mentionedBy(message) {
 
 	if (silenced) return;
 
-	if (lower.startsWith('shut up')) {
-		let timeout = lower.endsWith('for a bit')
-			? 5 * 60 * 1000 //5min
-			: lower.endsWith('for a min') || lower.endsWith('for a minute')
-			? 1 * 60 * 1000 //1min
-			: 30 * 60 * 1000; //30min
+	const shutUpMap = { // in minutes
+		[1 * 60 * 1000]: /^(shut up|be quiet) for a min(ute)?\W?$/,
+		[5 * 60 * 1000]: /^(shut up|be quiet) for a bit\W?$/,
+		[30 * 60 * 1000]: /^(shut up|be quiet)\b/,
+	};
+	const validShutUp = Object.entries(shutUpMap).find(arr => arr[1].test(lower));
+	if (validShutUp) {
+		const timeout = validShutUp[0];
 
 		setSilencedState(true);
 		channel.send('Okay');
 
 		setTimeout(() => {
 			setSilencedState(false);
-		}, timeout); //30min
+		}, timeout);
 		return;
 	}
 

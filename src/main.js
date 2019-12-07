@@ -224,25 +224,29 @@ async function messageReceived(message) {
 	//SWAPS
 	if (words.length > 0) {
 		//EX -> SEX
-		if (words.some(x => x.startsWith('ex')) && chance(1)) {
+		const startsWithExRegex = /\bex\B/;
+		if (startsWithExRegex.test(lower) && chance(1)) {
 			channel.send(message.content.replace('ex', 'sex').replace('Ex', 'Sex'));
 			return;
 		}
 
 		//ELECT -> ERECT
-		if (words.some(x => x.startsWith('elect')) && chance(1)) {
+		const startsWithElectRegex = /\belect\B/;
+		if (startsWithExRegex.test(lower) && chance(1)) {
 			channel.send(message.content.replace('elect', 'erect').replace('Elect', 'Erect'));
 			return;
 		}
 
 		//THE FUCKING -> FUCKING THE
-		if (lower.includes('the fucking') && chance(100)) {
+		const containsTheFuckingRegex = /\bthe fucking\b/;
+		if (containsTheFuckingRegex.test(lower) && chance(100)) {
 			channel.send(message.content.replace('the fucking', 'fucking the'));
 			return;
 		}
 
 		//THIS FUCKING -> FUCKING THIS
-		if (lower.includes('this fucking') && chance(100)) {
+		const containsThisFuckingRegex = /\bthis fucking\b/;
+		if (containsThisFuckingRegex.test(lower) && chance(100)) {
 			channel.send(message.content.replace('this fucking', 'fucking this'));
 			return;
 		}
@@ -307,7 +311,7 @@ async function messageReceived(message) {
 
 	//3-WORD TUMBLR
 	//chance that a message with 3 words makes a link to 3words.tumblr.com
-	if ((words.length === 3) & chance(3) && !hasDuplicates(words)) {
+	if ((words.length === 3) && chance(3) && !hasDuplicates(words)) {
 		//made up a % chance to trigger - XCKD Bucket has a config database entry for % chance
 		channel.send(`https://${words.join('')}.tumblr.com`)
 		return;

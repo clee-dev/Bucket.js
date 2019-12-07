@@ -455,6 +455,7 @@ async function mentionedBy(message) {
 	}
 
 	//describe last-ACTIVATED factoid
+	//TODO REGEXIFYYYYY BB
 	if (
 		lower === 'what was that' ||
 		(lower.startsWith('what was that') && lower.length === 'what was that'.length + 1)
@@ -468,6 +469,7 @@ async function mentionedBy(message) {
 	}
 
 	//forget last-ACTIVATED factoid
+	//TODO REGEXIFYYYYY BB
 	if (lower === 'forget that' || (lower.startsWith('forget that') && lower.length === 'forget that'.length + 1)) {
 		let last = await getLastFactoidData();
 		if (last && (secrets.admins[user.username] || factoid.user.id === user.id)) {
@@ -483,6 +485,7 @@ async function mentionedBy(message) {
 	}
 
 	//being taught a factoid
+	//TODO REGEXIFYYYYY BB
 	if (words.some(x => x.startsWith('<') && x.endsWith('>'))) {
 		let div = words.find(w => w.startsWith('<') && w.endsWith('>'));
 		div = div.substring(1, div.length - 1); //remove < >
@@ -500,6 +503,7 @@ async function mentionedBy(message) {
 
 	if (words.length >= 2) {
 		//being taught short factoids
+		//TODO REGEXIFYYYYY BB https://github.com/clee-dev/Bucket.js/issues/18
 		if (words[1] === 'is' || words[1] === 'are') {
 			learnNewFactoid(
 				words[0],
@@ -511,6 +515,7 @@ async function mentionedBy(message) {
 			return;
 		}
 
+		//TODO REGEXIFYYYYY BB
 		if (words[1] === 'quotes') {
 			let name = words[0];
 			let users = Array.from(client.users).map(x => x[1]);
@@ -531,6 +536,7 @@ async function mentionedBy(message) {
 			}
 		}
 
+		//TODO REGEXIFYYYYY BB
 		if (words[0] === 'remember') {
 			let users = Array.from(client.users).map(x => x[1]);
 			let user = users.find(x => x.username.toLowerCase() === words[1]);
@@ -590,11 +596,13 @@ async function mentionedBy(message) {
 		return;
 	}
 
+	//TODO REGEXIFYYYYY BB
 	if (lower.startsWith('do you know')) {
 		channel.send('No, but if you hum a few bars I can fake it.');
 		return;
 	}
 
+	//TODO REGEXIFYYYYY BB
 	if (lower.startsWith('how much is in the swear jar') && words.length === 7) {
 		let swearjar = await db.collection('swearjar').get();
 		let totalPennies = 0;
@@ -617,6 +625,7 @@ async function mentionedBy(message) {
 	}
 
 	//"this or that?"
+	//TODO REGEXIFYYYYY BB https://github.com/clee-dev/Bucket.js/issues/20
 	if (lower.includes(' or ')) {
 		if (lower.startsWith('should i') || lower.startsWith('should we')) {
 			lower = lower.substring(7);
@@ -759,6 +768,7 @@ function escapeRegExp(string) {
 async function processFactoid(matchingFactoids, message) {
 	let middleRegex = /^[\^\_]/g;
 	if (!chance(1)) matchingFactoids = matchingFactoids.filter(x => x.Middle.replace(middleRegex, '') !== 'swap');
+	// TODO figure out why the above line exists and why it's a 99% CHANCE???
 
 	let lastFactoid = await getLastFactoidData();
 

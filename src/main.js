@@ -482,11 +482,11 @@ async function mentionedBy(message) {
 
 	//being taught a factoid
 	const teachFactoidRegex = /(.+) (<([_^]?[^@].+)>|is|are) (.+)/i;
-	const matches = content.match(teachFactoidRegex);
-	if (matches) {
-		const x = matches[1];
-		const mid = matches[3] || matches[2];
-		const y = matches[4];
+	const teachFactoidMatches = content.match(teachFactoidRegex);
+	if (teachFactoidMatches) {
+		const x = teachFactoidMatches[1];
+		const mid = teachFactoidMatches[3] || teachFactoidMatches[2];
+		const y = teachFactoidMatches[4];
 
 		if (chance(98)) learnNewFactoid(x, mid, y, user, channel);
 		else channel.send(`Your mom is ${y}!`);
@@ -494,18 +494,19 @@ async function mentionedBy(message) {
 	}
 
 	if (words.length >= 2) {
-		//TODO REGEXIFYYYYY BB
-		if (words[1] === 'quotes') {
-			let name = words[0];
-			let users = Array.from(client.users).map(x => x[1]);
-			let user = users.find(x => x.username.toLowerCase() === name);
+		const quotesRegex = /^([^\s]+) quotes$/;
+		const quotesMatches = lower.match(quotesRegex);
+		if (quotesMatches) {
+			const name = quotesMatches[1];
+			const users = Array.from(client.users).map(x => x[1]);
+			const user = users.find(x => x.username.toLowerCase() === name);
 			if (user) {
-				let quotes = await db
+				const quotes = await db
 					.collection('quotes')
 					.where('user.username', '==', user.username)
 					.get();
 				if (!quotes.empty) {
-					let quote = getRandomElement(quotes.docs).data().quote;
+					const quote = getRandomElement(quotes.docs).data().quote;
 					channel.send(`${user.username}: ${quote}`);
 					return;
 				} else {
@@ -515,28 +516,19 @@ async function mentionedBy(message) {
 			}
 		}
 
-		//TODO REGEXIFYYYYY BB
-		if (words[0] === 'remember') {
-			let users = Array.from(client.users).map(x => x[1]);
-			let user = users.find(x => x.username.toLowerCase() === words[1]);
+		const rememberRegex = /^remember ([^\s]+) (.+)/;
+		const rememberMatches = lower.match(rememberRegex);
+		if (rememberMatches) {
+			const users = Array.from(client.users).map(x => x[1]);
+			const user = users.find(x => x.username.toLowerCase() === rememberMatches[1]);
 			if (user) {
-				let messages = await channel.fetchMessages({ limit: 50 });
-				messages = Array.from(messages)
+				const fetch = await channel.fetchMessages({ limit: 50 });
+				const remember = Array.from(fetch)
 					.map(x => x[1])
 					.filter(x => x.id !== message.id)
 					.filter(x => x.author.id === user.id)
-					.filter(x =>
-						x.content.toLowerCase().includes(
-							content
-								.toLowerCase()
-								.substring(content.toLowerCase().indexOf(words[1]) + words[1].length + 1)
-								.toLowerCase()
-						)
-					);
-				console.log('MESSAGES');
-				console.log(messages);
-				if (messages.length) {
-					let remember = messages[0].content;
+					.find(x => x.content.toLowerCase().includes(rememberMatches[2].toLowerCase()));
+				if (remember) {
 					channel.send(`Okay, remembering ${user.username} said ${remember}`);
 					db.collection('quotes')
 						.doc(uuid())

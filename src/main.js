@@ -492,6 +492,7 @@ async function mentionedBy(message) {
 		else channel.send(`Your mom is ${y}!`);
 		return;
 	}
+	
 	const quotesRegex = /^([^\s]+) quotes$/;
 	const quotesMatches = lower.match(quotesRegex);
 	if (quotesMatches) {

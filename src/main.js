@@ -492,49 +492,46 @@ async function mentionedBy(message) {
 		else channel.send(`Your mom is ${y}!`);
 		return;
 	}
-
-	if (words.length >= 2) {
-		const quotesRegex = /^([^\s]+) quotes$/;
-		const quotesMatches = lower.match(quotesRegex);
-		if (quotesMatches) {
-			const name = quotesMatches[1];
-			const users = Array.from(client.users).map(x => x[1]);
-			const user = users.find(x => x.username.toLowerCase() === name);
-			if (user) {
-				const quotes = await db
-					.collection('quotes')
-					.where('user.username', '==', user.username)
-					.get();
-				if (!quotes.empty) {
-					const quote = getRandomElement(quotes.docs).data().quote;
-					channel.send(`${user.username}: ${quote}`);
-					return;
-				} else {
-					channel.send(`I don't have any quotes for ${name}`);
-					return;
-				}
+	const quotesRegex = /^([^\s]+) quotes$/;
+	const quotesMatches = lower.match(quotesRegex);
+	if (quotesMatches) {
+		const name = quotesMatches[1];
+		const users = Array.from(client.users).map(x => x[1]);
+		const user = users.find(x => x.username.toLowerCase() === name);
+		if (user) {
+			const quotes = await db
+				.collection('quotes')
+				.where('user.username', '==', user.username)
+				.get();
+			if (!quotes.empty) {
+				const quote = getRandomElement(quotes.docs).data().quote;
+				channel.send(`${user.username}: ${quote}`);
+				return;
+			} else {
+				channel.send(`I don't have any quotes for ${name}`);
+				return;
 			}
 		}
+	}
 
-		const rememberRegex = /^remember ([^\s]+) (.+)/;
-		const rememberMatches = lower.match(rememberRegex);
-		if (rememberMatches) {
-			const users = Array.from(client.users).map(x => x[1]);
-			const user = users.find(x => x.username.toLowerCase() === rememberMatches[1]);
-			if (user) {
-				const fetch = await channel.fetchMessages({ limit: 50 });
-				const remember = Array.from(fetch)
-					.map(x => x[1])
-					.filter(x => x.id !== message.id)
-					.filter(x => x.author.id === user.id)
-					.find(x => x.content.toLowerCase().includes(rememberMatches[2].toLowerCase()));
-				if (remember) {
-					channel.send(`Okay, remembering ${user.username} said ${remember}`);
-					db.collection('quotes')
-						.doc(uuid())
-						.set({ user: { id: user.id, username: user.username }, quote: remember });
-					return;
-				}
+	const rememberRegex = /^remember ([^\s]+) (.+)/;
+	const rememberMatches = lower.match(rememberRegex);
+	if (rememberMatches) {
+		const users = Array.from(client.users).map(x => x[1]);
+		const user = users.find(x => x.username.toLowerCase() === rememberMatches[1]);
+		if (user) {
+			const fetch = await channel.fetchMessages({ limit: 50 });
+			const remember = Array.from(fetch)
+				.map(x => x[1])
+				.filter(x => x.id !== message.id)
+				.filter(x => x.author.id === user.id)
+				.find(x => x.content.toLowerCase().includes(rememberMatches[2].toLowerCase()));
+			if (remember) {
+				channel.send(`Okay, remembering ${user.username} said ${remember}`);
+				db.collection('quotes')
+					.doc(uuid())
+					.set({ user: { id: user.id, username: user.username }, quote: remember });
+				return;
 			}
 		}
 	}

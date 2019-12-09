@@ -481,36 +481,19 @@ async function mentionedBy(message) {
 	}
 
 	//being taught a factoid
-	//TODO REGEXIFYYYYY BB
-	if (words.some(x => x.startsWith('<') && x.endsWith('>'))) {
-		let div = words.find(w => w.startsWith('<') && w.endsWith('>'));
-		div = div.substring(1, div.length - 1); //remove < >
-		if (!div.startsWith('@')) {
-			//discord mentions look like <@userid>
-			let x = lower.substring(0, lower.indexOf(div) - 2).trim();
-			let mid = div.trim();
-			let y = content.substring(lower.indexOf(div) + div.length + 2).trim();
+	const teachFactoidRegex = /(.+) (<([_^]?[^@].+)>|is|are) (.+)/i;
+	const matches = content.match(teachFactoidRegex);
+	if (matches) {
+		const x = matches[1];
+		const mid = matches[3] || matches[2];
+		const y = matches[4];
 
-			if (chance(95)) learnNewFactoid(x, mid, y, user, channel);
-			else channel.send(`Your mom is ${y}!`);
-		}
+		if (chance(98)) learnNewFactoid(x, mid, y, user, channel);
+		else channel.send(`Your mom is ${y}!`);
 		return;
 	}
 
 	if (words.length >= 2) {
-		//being taught short factoids
-		//TODO REGEXIFYYYYY BB https://github.com/clee-dev/Bucket.js/issues/18
-		if (words[1] === 'is' || words[1] === 'are') {
-			learnNewFactoid(
-				words[0],
-				words[1],
-				lower.substring(lower.indexOf(words[1]) + words[1].length + 1),
-				user,
-				channel
-			);
-			return;
-		}
-
 		//TODO REGEXIFYYYYY BB
 		if (words[1] === 'quotes') {
 			let name = words[0];

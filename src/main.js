@@ -567,14 +567,14 @@ async function mentionedBy(message) {
 		return;
 	}
 
-	//TODO REGEXIFYYYYY BB
-	if (lower.startsWith('do you know')) {
+	const doYouKnowRegex = /^do you know .+/;
+	if (doYouKnowRegex.test(lower)) {
 		channel.send('No, but if you hum a few bars I can fake it.');
 		return;
 	}
 
-	//TODO REGEXIFYYYYY BB
-	if (lower.startsWith('how much is in the swear jar') && words.length === 7) {
+	const swearJarRegex = /^how much is in the swear jar[.?!]*$/;
+	if (swearJarRegex.test(lower)) {
 		let swearjar = await db.collection('swearjar').get();
 		let totalPennies = 0;
 		if (!swearjar.empty) swearjar.docs.forEach(x => (totalPennies += x.data().total));
@@ -596,15 +596,11 @@ async function mentionedBy(message) {
 	}
 
 	//"this or that?"
-	//TODO REGEXIFYYYYY BB https://github.com/clee-dev/Bucket.js/issues/20
-	if (lower.includes(' or ')) {
-		if (lower.startsWith('should i') || lower.startsWith('should we')) {
-			lower = lower.substring(7);
-			lower = lower.substring(lower.indexOf(' ') + 1);
-		}
-		lower = filterNonWords(lower);
-		let X = lower.substring(0, lower.indexOf(' or '));
-		let Y = lower.substring(lower.indexOf(' or ') + 4);
+	const thisOrThatRegex = /(should (i|we) )?(.+) or (should (i|we) )?(.+)/i;
+	const thisOrThatMatches = content.match(thisOrThatRegex);
+	if (thisOrThatMatches) {
+		const X = thisOrThatMatches[3];
+		const Y = thisOrThatMatches[6];
 		channel.send(getRandomElement([X, Y]));
 		return;
 	}

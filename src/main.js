@@ -455,12 +455,8 @@ async function mentionedBy(message) {
 	}
 
 	//describe last-ACTIVATED factoid
-	//TODO REGEXIFYYYYY BB
-	if (
-		lower === 'what was that' ||
-		(lower.startsWith('what was that') && lower.length === 'what was that'.length + 1)
-	) {
-		/*|| state.lastFactoid.user === user.id*/
+	const whatWasThatRegex = /^what was that[.?!]*$/;
+	if (whatWasThatRegex.test(lower)) {
 		let factoid = await getLastFactoidData();
 		if (factoid && (secrets.admins[user.username] || factoid.user.id === user.id)) {
 			channel.send(`That was: ${factoid.X} <${factoid.Middle}> ${factoid.Y}`);
@@ -469,8 +465,8 @@ async function mentionedBy(message) {
 	}
 
 	//forget last-ACTIVATED factoid
-	//TODO REGEXIFYYYYY BB
-	if (lower === 'forget that' || (lower.startsWith('forget that') && lower.length === 'forget that'.length + 1)) {
+	const forgetThatRegex = /^forget that[.?!]*$/;
+	if (forgetThatRegex.test(lower)) {
 		let last = await getLastFactoidData();
 		if (last && (secrets.admins[user.username] || factoid.user.id === user.id)) {
 			await unlearnFactoid(last.X, last.Middle, last.Y);

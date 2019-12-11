@@ -115,7 +115,7 @@ async function messageReceived(message) {
 
 	//check if mentioned
 	//"@Bucket *" || "bucket,*" || "bucket:*" || "*, bucket" || "*,bucket"
-	const mentionBucketRegex = /^bucket[,:].*|.+, ?bucket$/;
+	const mentionBucketRegex = /^bucket[,:].*|.+, ?bucket[.?!]*$/;
 	if (message.isMentioned(client.user) || mentionBucketRegex.test(lower)) {
 		mentionedBy(message);
 		return;

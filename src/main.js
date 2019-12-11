@@ -224,7 +224,7 @@ async function messageReceived(message) {
 	//SWAPS
 	//EX -> SEX
 	if (chance(1)) {
-		const m = message.content.replace(/\bex\B/i, (match) => {
+		const m = message.content.replace(/\bex\w+(?!:)\b/i, (match) => {
 			const isUppercase = match[0].toUpperCase() === match[0];
 			return isUppercase ? 'Sex' : 'sex';
 		});
@@ -236,7 +236,7 @@ async function messageReceived(message) {
 
 	//ELECT -> ERECT
 	if (chance(1)) {
-		const m = message.content.replace(/\belect\B/i, (match) => {
+		const m = message.content.replace(/\belect\w+(?!:)\b/i, (match) => {
 			const isUppercase = match[0].toUpperCase() === match[0];
 			return isUppercase ? 'Erect' : 'erect';
 		});

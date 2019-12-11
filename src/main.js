@@ -115,13 +115,8 @@ async function messageReceived(message) {
 
 	//check if mentioned
 	//"@Bucket *" || "bucket,*" || "bucket:*" || "*, bucket" || "*,bucket"
-	if (
-		message.isMentioned(client.user) ||
-		lower.startsWith('bucket,') ||
-		lower.startsWith('bucket:') ||
-		lower.endsWith(', bucket') ||
-		lower.endsWith(',bucket')
-	) {
+	const mentionBucketRegex = /^bucket[,:].*|.+, ?bucket$/;
+	if (message.isMentioned(client.user) || mentionBucketRegex.test(lower)) {
 		mentionedBy(message);
 		return;
 	}
@@ -207,7 +202,8 @@ async function messageReceived(message) {
 	}
 
 	//*USES X*
-	if ((lower.startsWith('*uses ') || lower.startsWith('_uses ')) && (lower.endsWith('*') || lower.endsWith('_'))) {
+	const pokemonRegex = /^\*uses .+\*|_uses .+_$/;
+	if (pokemonRegex.test(lower)) {
 		switch (getRandomInt(1, 4)) {
 			case 1:
 				channel.send('It has no effect.');
@@ -226,42 +222,58 @@ async function messageReceived(message) {
 	}
 
 	//SWAPS
-	if (words.length > 0) {
-		//EX -> SEX
-		if (words.some(x => x.startsWith('ex')) && chance(1)) {
-			channel.send(message.content.replace('ex', 'sex').replace('Ex', 'Sex'));
+	//EX -> SEX
+	if (chance(1)) {
+		const m = message.content.replace(/\bex\w+(?!:)\b/i, (match) => {
+			const isUppercase = match[0].toUpperCase() === match[0];
+			return isUppercase ? 'Sex' : 'sex';
+		});
+		if (message.content !== m) {
+			channel.send(m);
 			return;
 		}
+	}
 
-		//ELECT -> ERECT
-		if (words.some(x => x.startsWith('elect')) && chance(1)) {
-			channel.send(message.content.replace('elect', 'erect').replace('Elect', 'Erect'));
+	//ELECT -> ERECT
+	if (chance(1)) {
+		const m = message.content.replace(/\belect\w+(?!:)\b/i, (match) => {
+			const isUppercase = match[0].toUpperCase() === match[0];
+			return isUppercase ? 'Erect' : 'erect';
+		});
+		if (message.content !== m) {
+			channel.send(m);
 			return;
 		}
+	}
 
-		//THE FUCKING -> FUCKING THE
-		if (lower.includes('the fucking') && chance(100)) {
-			channel.send(message.content.replace('the fucking', 'fucking the'));
+	//THE FUCKING -> FUCKING THE
+	if (chance(100)) {
+		const m = message.content.replace(/\bthe fucking\b/i, (match) => match.split(' ').reverse().join(' '));
+		if (message.content !== m) {
+			channel.send(m);
 			return;
 		}
+	}
 
-		//THIS FUCKING -> FUCKING THIS
-		if (lower.includes('this fucking') && chance(100)) {
-			channel.send(message.content.replace('this fucking', 'fucking this'));
+	//THIS FUCKING -> FUCKING THIS
+	if (chance(100)) {
+		const m = message.content.replace(/\bthis fucking\b/i, (match) => match.split(' ').reverse().join(' '));
+		if (message.content !== m) {
+			channel.send(m);
 			return;
 		}
+	}
 
-		//sarcasm -> SArcAsM (2% CHANCE)
-		//disabled because it happens way too much, even at 2%
-		if (false && words.length <= 6 && chance(2)) {
-			let sarcastic = client.emojis.find(emoji => emoji.name === 'sarcastic');
-			channel.send(
-				Array.from(lower)
-					.map(x => (chance(50) ? x.toUpperCase() : x.toLowerCase()))
-					.join('') + (sarcastic ? ` ${sarcastic}` : '')
-			);
-			return;
-		}
+	//sarcasm -> SArcAsM (2% CHANCE)
+	//disabled because it happens way too much, even at 2%
+	if (false && words.length <= 6 && chance(2)) {
+		let sarcastic = client.emojis.find(emoji => emoji.name === 'sarcastic');
+		channel.send(
+			Array.from(lower)
+				.map(x => (chance(50) ? x.toUpperCase() : x.toLowerCase()))
+				.join('') + (sarcastic ? ` ${sarcastic}` : '')
+		);
+		return;
 	}
 
 	//SAY ABCD -> ABCD
@@ -311,7 +323,7 @@ async function messageReceived(message) {
 
 	//3-WORD TUMBLR
 	//chance that a message with 3 words makes a link to 3words.tumblr.com
-	if ((words.length === 3) & chance(3) && !hasDuplicates(words)) {
+	if ((words.length === 3) && chance(3) && !hasDuplicates(words)) {
 		//made up a % chance to trigger - XCKD Bucket has a config database entry for % chance
 		channel.send(`https://${words.join('')}.tumblr.com`)
 		return;
@@ -421,19 +433,21 @@ async function mentionedBy(message) {
 
 	if (silenced) return;
 
-	if (lower.startsWith('shut up')) {
-		let timeout = lower.endsWith('for a bit')
-			? 5 * 60 * 1000 //5min
-			: lower.endsWith('for a min') || lower.endsWith('for a minute')
-			? 1 * 60 * 1000 //1min
-			: 30 * 60 * 1000; //30min
+	const shutUpMap = { // in minutes
+		[1 * 60 * 1000]: /^(shut up|be quiet) for a min(ute)?\W?$/,
+		[5 * 60 * 1000]: /^(shut up|be quiet) for a bit\W?$/,
+		[30 * 60 * 1000]: /^(shut up|be quiet)\b/,
+	};
+	const validShutUp = Object.entries(shutUpMap).find(arr => arr[1].test(lower));
+	if (validShutUp) {
+		const timeout = validShutUp[0];
 
 		setSilencedState(true);
 		channel.send('Okay');
 
 		setTimeout(() => {
 			setSilencedState(false);
-		}, timeout); //30min
+		}, timeout);
 		return;
 	}
 
@@ -453,11 +467,8 @@ async function mentionedBy(message) {
 	}
 
 	//describe last-ACTIVATED factoid
-	if (
-		lower === 'what was that' ||
-		(lower.startsWith('what was that') && lower.length === 'what was that'.length + 1)
-	) {
-		/*|| state.lastFactoid.user === user.id*/
+	const whatWasThatRegex = /^what was that[.?!]*$/;
+	if (whatWasThatRegex.test(lower)) {
 		let factoid = await getLastFactoidData();
 		if (factoid && (secrets.admins[user.username] || factoid.user.id === user.id)) {
 			channel.send(`That was: ${factoid.X} <${factoid.Middle}> ${factoid.Y}`);
@@ -466,7 +477,8 @@ async function mentionedBy(message) {
 	}
 
 	//forget last-ACTIVATED factoid
-	if (lower === 'forget that' || (lower.startsWith('forget that') && lower.length === 'forget that'.length + 1)) {
+	const forgetThatRegex = /^forget that[.?!]*$/;
+	if (forgetThatRegex.test(lower)) {
 		let last = await getLastFactoidData();
 		if (last && (secrets.admins[user.username] || factoid.user.id === user.id)) {
 			await unlearnFactoid(last.X, last.Middle, last.Y);
@@ -481,81 +493,58 @@ async function mentionedBy(message) {
 	}
 
 	//being taught a factoid
-	if (words.some(x => x.startsWith('<') && x.endsWith('>'))) {
-		let div = words.find(w => w.startsWith('<') && w.endsWith('>'));
-		div = div.substring(1, div.length - 1); //remove < >
-		if (!div.startsWith('@')) {
-			//discord mentions look like <@userid>
-			let x = lower.substring(0, lower.indexOf(div) - 2).trim();
-			let mid = div.trim();
-			let y = content.substring(lower.indexOf(div) + div.length + 2).trim();
+	const teachFactoidRegex = /(.+) (<([_^]?[^@].+)>|is|are) (.+)/i;
+	const teachFactoidMatches = content.match(teachFactoidRegex);
+	if (teachFactoidMatches) {
+		const x = teachFactoidMatches[1];
+		const mid = teachFactoidMatches[3] || teachFactoidMatches[2];
+		const y = teachFactoidMatches[4];
 
-			if (chance(95)) learnNewFactoid(x, mid, y, user, channel);
-			else channel.send(`Your mom is ${y}!`);
-		}
+		if (chance(98)) learnNewFactoid(x, mid, y, user, channel);
+		else channel.send(`Your mom is ${y}!`);
 		return;
 	}
 
-	if (words.length >= 2) {
-		//being taught short factoids
-		if (words[1] === 'is' || words[1] === 'are') {
-			learnNewFactoid(
-				words[0],
-				words[1],
-				lower.substring(lower.indexOf(words[1]) + words[1].length + 1),
-				user,
-				channel
-			);
-			return;
-		}
-
-		if (words[1] === 'quotes') {
-			let name = words[0];
-			let users = Array.from(client.users).map(x => x[1]);
-			let user = users.find(x => x.username.toLowerCase() === name);
-			if (user) {
-				let quotes = await db
-					.collection('quotes')
-					.where('user.username', '==', user.username)
-					.get();
-				if (!quotes.empty) {
-					let quote = getRandomElement(quotes.docs).data().quote;
-					channel.send(`${user.username}: ${quote}`);
-					return;
-				} else {
-					channel.send(`I don't have any quotes for ${name}`);
-					return;
-				}
+	const quotesRegex = /^([^\s]+) quotes$/;
+	const quotesMatches = lower.match(quotesRegex);
+	if (quotesMatches) {
+		const name = quotesMatches[1];
+		const users = Array.from(client.users).map(x => x[1]);
+		const user = users.find(x => x.username.toLowerCase() === name);
+		if (user) {
+			const quotes = await db
+				.collection('quotes')
+				.where('user.username', '==', user.username)
+				.get();
+			if (!quotes.empty) {
+				const quote = getRandomElement(quotes.docs).data().quote;
+				channel.send(`${user.username}: ${quote}`);
+				return;
+			} else {
+				channel.send(`I don't have any quotes for ${name}`);
+				return;
 			}
 		}
+	}
 
-		if (words[0] === 'remember') {
-			let users = Array.from(client.users).map(x => x[1]);
-			let user = users.find(x => x.username.toLowerCase() === words[1]);
-			if (user) {
-				let messages = await channel.fetchMessages({ limit: 50 });
-				messages = Array.from(messages)
-					.map(x => x[1])
-					.filter(x => x.id !== message.id)
-					.filter(x => x.author.id === user.id)
-					.filter(x =>
-						x.content.toLowerCase().includes(
-							content
-								.toLowerCase()
-								.substring(content.toLowerCase().indexOf(words[1]) + words[1].length + 1)
-								.toLowerCase()
-						)
-					);
-				console.log('MESSAGES');
-				console.log(messages);
-				if (messages.length) {
-					let remember = messages[0].content;
-					channel.send(`Okay, remembering ${user.username} said ${remember}`);
-					db.collection('quotes')
-						.doc(uuid())
-						.set({ user: { id: user.id, username: user.username }, quote: remember });
-					return;
-				}
+	const rememberRegex = /^remember ([^\s]+) (.+)/;
+	const rememberMatches = lower.match(rememberRegex);
+	if (rememberMatches) {
+		const users = Array.from(client.users).map(x => x[1]);
+		const user = users.find(x => x.username.toLowerCase() === rememberMatches[1]);
+		if (user) {
+			const fetch = await channel.fetchMessages({ limit: 50 });
+			const remember = Array.from(fetch)
+				.map(x => x[1])
+				.filter(x => x.id !== message.id)
+				.filter(x => x.author.id === user.id)
+				.find(x => x.content.toLowerCase().includes(rememberMatches[2].toLowerCase()));
+			if (remember) {
+				channel.send(`Okay, remembering ${user.username} said ${remember}`);
+				db.collection('quotes')
+					.doc(uuid())
+					.set({ user: { id: user.id, username: user.username }, quote: remember });
+				return;
 			}
 		}
 	}
@@ -588,12 +577,14 @@ async function mentionedBy(message) {
 		return;
 	}
 
-	if (lower.startsWith('do you know')) {
+	const doYouKnowRegex = /^do you know .+/;
+	if (doYouKnowRegex.test(lower)) {
 		channel.send('No, but if you hum a few bars I can fake it.');
 		return;
 	}
 
-	if (lower.startsWith('how much is in the swear jar') && words.length === 7) {
+	const swearJarRegex = /^how much is in the swear jar[.?!]*$/;
+	if (swearJarRegex.test(lower)) {
 		let swearjar = await db.collection('swearjar').get();
 		let totalPennies = 0;
 		if (!swearjar.empty) swearjar.docs.forEach(x => (totalPennies += x.data().total));
@@ -615,14 +606,11 @@ async function mentionedBy(message) {
 	}
 
 	//"this or that?"
-	if (lower.includes(' or ')) {
-		if (lower.startsWith('should i') || lower.startsWith('should we')) {
-			lower = lower.substring(7);
-			lower = lower.substring(lower.indexOf(' ') + 1);
-		}
-		lower = filterNonWords(lower);
-		let X = lower.substring(0, lower.indexOf(' or '));
-		let Y = lower.substring(lower.indexOf(' or ') + 4);
+	const thisOrThatRegex = /(should (i|we) )?(.+) or (should (i|we) )?([^?!.]+)/i;
+	const thisOrThatMatches = content.match(thisOrThatRegex);
+	if (thisOrThatMatches) {
+		const X = thisOrThatMatches[3];
+		const Y = thisOrThatMatches[6];
 		channel.send(getRandomElement([X, Y]));
 		return;
 	}
@@ -757,6 +745,7 @@ function escapeRegExp(string) {
 async function processFactoid(matchingFactoids, message) {
 	let middleRegex = /^[\^\_]/g;
 	if (!chance(1)) matchingFactoids = matchingFactoids.filter(x => x.Middle.replace(middleRegex, '') !== 'swap');
+	// TODO figure out why the above line exists and why it's a 99% CHANCE???
 
 	let lastFactoid = await getLastFactoidData();
 

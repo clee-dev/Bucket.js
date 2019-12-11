@@ -606,7 +606,7 @@ async function mentionedBy(message) {
 	}
 
 	//"this or that?"
-	const thisOrThatRegex = /(should (i|we) )?(.+) or (should (i|we) )?(.+)/i;
+	const thisOrThatRegex = /(should (i|we) )?(.+) or (should (i|we) )?([^?!.]+)/i;
 	const thisOrThatMatches = content.match(thisOrThatRegex);
 	if (thisOrThatMatches) {
 		const X = thisOrThatMatches[3];

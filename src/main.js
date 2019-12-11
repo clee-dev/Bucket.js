@@ -388,14 +388,12 @@ async function mentionedBy(message) {
 	let channel = message.channel;
 
 	let content = message.content;
-	let lower = content.toLowerCase();
-	if (lower.startsWith('bucket') || content.startsWith(`<@${client.user.id}>`)) {
-		lower = lower.substring(lower.indexOf(' ') + 1);
-		content = content.substring(lower.indexOf(' ') + 1);
+	if (content.toLowerCase().startsWith('bucket') || content.startsWith(`<@${client.user.id}>`)) {
+		content = content.substring(content.indexOf(' ') + 1);
 	} else {
-		lower = lower.substring(0, lower.lastIndexOf(', bucket'));
-		content = content.substring(0, lower.lastIndexOf(', bucket'));
+		content = content.substring(0, content.toLowerCase().lastIndexOf(', bucket'));
 	}
+	let lower = content.toLowerCase();
 
 	let words = getWords(lower);
 

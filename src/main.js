@@ -202,7 +202,7 @@ async function messageReceived(message) {
 	}
 
 	//*USES X*
-	const pokemonRegex = /^\*uses .+\*|_uses .+_$/;
+	const pokemonRegex = /^(\*uses .+\*|_uses .+_)$/;
 	if (pokemonRegex.test(lower)) {
 		switch (getRandomInt(1, 4)) {
 			case 1:

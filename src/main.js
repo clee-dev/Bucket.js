@@ -389,9 +389,13 @@ async function mentionedBy(message) {
 
 	let content = message.content;
 	let lower = content.toLowerCase();
-	if (lower.startsWith('bucket') || content.startsWith(`<@${client.user.id}>`))
+	if (lower.startsWith('bucket') || content.startsWith(`<@${client.user.id}>`)) {
 		lower = lower.substring(lower.indexOf(' ') + 1);
-	else lower = lower.substring(0, lower.lastIndexOf(', bucket'));
+		content = content.substring(lower.indexOf(' ') + 1);
+	} else {
+		lower = lower.substring(0, lower.lastIndexOf(', bucket'));
+		content = content.substring(0, lower.lastIndexOf(', bucket'));
+	}
 
 	let words = getWords(lower);
 

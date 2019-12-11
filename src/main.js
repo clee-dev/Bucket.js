@@ -222,46 +222,58 @@ async function messageReceived(message) {
 	}
 
 	//SWAPS
-	if (words.length > 0) {
-		//EX -> SEX
-		const startsWithExRegex = /\bex\B/;
-		if (startsWithExRegex.test(lower) && chance(1)) {
-			channel.send(message.content.replace('ex', 'sex').replace('Ex', 'Sex'));
+	//EX -> SEX
+	if (chance(1)) {
+		const m = message.content.replace(/\bex\B/i, (match) => {
+			const isUppercase = match[0].toUpperCase() === match[0];
+			return isUppercase ? 'Sex' : 'sex';
+		});
+		if (message.content !== m) {
+			channel.send(m);
 			return;
 		}
+	}
 
-		//ELECT -> ERECT
-		const startsWithElectRegex = /\belect\B/;
-		if (startsWithExRegex.test(lower) && chance(1)) {
-			channel.send(message.content.replace('elect', 'erect').replace('Elect', 'Erect'));
+	//ELECT -> ERECT
+	if (chance(1)) {
+		const m = message.content.replace(/\belect\B/i, (match) => {
+			const isUppercase = match[0].toUpperCase() === match[0];
+			return isUppercase ? 'Erect' : 'erect';
+		});
+		if (message.content !== m) {
+			channel.send(m);
 			return;
 		}
+	}
 
-		//THE FUCKING -> FUCKING THE
-		const containsTheFuckingRegex = /\bthe fucking\b/;
-		if (containsTheFuckingRegex.test(lower) && chance(100)) {
-			channel.send(message.content.replace('the fucking', 'fucking the'));
+	//THE FUCKING -> FUCKING THE
+	if (chance(100)) {
+		const m = message.content.replace(/\bthe fucking\b/i, (match) => match.split(' ').reverse().join(' '));
+		if (message.content !== m) {
+			channel.send(m);
 			return;
 		}
+	}
 
-		//THIS FUCKING -> FUCKING THIS
-		const containsThisFuckingRegex = /\bthis fucking\b/;
-		if (containsThisFuckingRegex.test(lower) && chance(100)) {
-			channel.send(message.content.replace('this fucking', 'fucking this'));
+	//THIS FUCKING -> FUCKING THIS
+	if (chance(100)) {
+		const m = message.content.replace(/\bthis fucking\b/i, (match) => match.split(' ').reverse().join(' '));
+		if (message.content !== m) {
+			channel.send(m);
 			return;
 		}
+	}
 
-		//sarcasm -> SArcAsM (2% CHANCE)
-		//disabled because it happens way too much, even at 2%
-		if (false && words.length <= 6 && chance(2)) {
-			let sarcastic = client.emojis.find(emoji => emoji.name === 'sarcastic');
-			channel.send(
-				Array.from(lower)
-					.map(x => (chance(50) ? x.toUpperCase() : x.toLowerCase()))
-					.join('') + (sarcastic ? ` ${sarcastic}` : '')
-			);
-			return;
-		}
+	//sarcasm -> SArcAsM (2% CHANCE)
+	//disabled because it happens way too much, even at 2%
+	if (false && words.length <= 6 && chance(2)) {
+		let sarcastic = client.emojis.find(emoji => emoji.name === 'sarcastic');
+		channel.send(
+			Array.from(lower)
+				.map(x => (chance(50) ? x.toUpperCase() : x.toLowerCase()))
+				.join('') + (sarcastic ? ` ${sarcastic}` : '')
+		);
+		return;
 	}
 
 	//SAY ABCD -> ABCD
@@ -492,7 +504,7 @@ async function mentionedBy(message) {
 		else channel.send(`Your mom is ${y}!`);
 		return;
 	}
-	
+
 	const quotesRegex = /^([^\s]+) quotes$/;
 	const quotesMatches = lower.match(quotesRegex);
 	if (quotesMatches) {

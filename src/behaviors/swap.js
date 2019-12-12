@@ -14,6 +14,7 @@ const enabled = [
         });
         return message.content !== m && m;
     }, async (send, message, db) => message.channel.send(send)),
+    
     new B(async (message, db) => { // swap elect => erect
 		const m = message.content.replace(/\belect\w+(?!:)\b/i, (match) => {
 			const isUppercase = match[0].toUpperCase() === match[0];
@@ -21,6 +22,7 @@ const enabled = [
         });
         return message.content !== m && m;
     }, async (send, message, db) => message.channel.send(send)),
+    
     new B(async (message, db) => { // swap the/this fuckin(g) => fuckin(g) the/this
         const m = message.content.replace(/\b(the|this) fucking?\b/i, (match) => match.split(' ').reverse().join(' '));
         return message.content !== m && m;

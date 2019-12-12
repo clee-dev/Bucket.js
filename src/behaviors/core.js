@@ -41,12 +41,13 @@ const enabled = [
             .doc('recentSyllables')
             .set({ arr: recentSyllables });
         
-        if (recentSyllables[0] === 5 && recentSyllables[1] === 7 && recentSyllables[2] === 5) {
-            return true;
-        }
+        return recentSyllables[0] === 5 &&
+            recentSyllables[1] === 7 &&
+            recentSyllables[2] === 5;
     }, async (data, message, db) => {
         message.channel.send('Was that a haiku?');
     }),
+
     new B(async (message, db) => { // receiving items
         const regex = /([_\*]gives bucket (.+)[_\*])|([_\*]puts (.+) in bucket([^a-zA-Z].*)[_\*]?)|([_\*]gives (.+) to bucket([^a-zA-Z].*)[_\*]?)/i;
         const groups = itemDetection.exec(message.content);
@@ -83,6 +84,7 @@ const enabled = [
                 .delete();
         }
     }),
+    
     new B(async (message, db) => message.match(/^(\*uses .+\*|_uses .+_)$/i), // pokemon attack
     async (matches, message, db) => {
 		switch (getRandomInt(1, 4)) {
@@ -100,17 +102,21 @@ const enabled = [
 				break;
 		}
     }),
+
     new B(async (message, db) => message.content.match(/^say (.+)/i, // say blah => blah
         async (matches, message, db) => message.channel.send(matches[1]))),
+
     new B(async (message, db) => /^buckety bucket$/i.test(message.content),
     async (data, message, db) => {
         const user = message.author;
         message.channel.send(`${user.username}ity ${user.username}`);
-    }),    
+    }),
+
     new B(async (message, db) => { // 3-word tumblr
         const words = getWords(message.content);
         return words.length === 3 && !hasDuplicates(words) && words;
     }, async (words, message, db) => message.channel.send(`https://${words.join('')}.tumblr.com`)),
+    
     new B(async (message, db) => { // good band name
         const words = getWords(message.content);
         return words.length === 3 && !hasDuplicates(words) && words;
@@ -134,6 +140,7 @@ const enabled = [
 			.doc(uuid())
 			.set({ name: bandName, acronym: tla });
     }),
+    
     new B(async (message, db) => { // three-letter acronym
         const words = getWords(message.content);
         const TLA = words.find(x => x.length === 3 && x === x.toUpperCase());

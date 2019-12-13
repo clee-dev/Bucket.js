@@ -85,10 +85,18 @@ async function messageReceived(message) {
 		.filter(b => mentioned && b.mentioned || !mentioned && b.nonmention)
 		.filter(b => silenced && b.silenced || !silenced && !b.silent);
 
-	const results = potential.map(b => ({
-		action: b.action,
-		data: await b.check(context)
-	})).filter(r => chance(config.chances[r.name] || 100));
+	// const results = potential.map(async (b) => ({
+	// 	action: b.action,
+	// 	data: await b.check(context)
+	// })).filter(r => chance(config.chances[r.name] || 100));
+	let results = [];
+	for (const b of potential) {
+		results.push({
+			action: b.action,
+			data: await b.check(context)
+		});
+	}
+	results = results.filter(r => chance(config.chances[r.name] || 100));
 
 	const final = results.find(r => r.data);
 	await final.action(context, final.data);

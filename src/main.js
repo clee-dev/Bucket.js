@@ -47,8 +47,7 @@ client.on('ready', () => {
 	// 'I just restarted!'
 	const adminIDs = Object.values(secrets.admins);
 	const adminsPing = adminIDs.map(id => '<@' + id + '>').join(' ');
-	const message = adminsPing + '\r\n' +
-					'I just restarted!';
+	const message = adminsPing + '\r\n' + 'I just restarted!';
 	
 	debugChannels.forEach(channel => channel.send(message));
 });

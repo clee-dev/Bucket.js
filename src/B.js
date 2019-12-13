@@ -1,5 +1,6 @@
 class B {
     constructor(
+        name,
         check,
         action,
         {
@@ -7,6 +8,7 @@ class B {
             nonmention = true,
             silent = false
         } = { mention: false, nonmention: true, silent: false }) {
+        this.name = name;
         this.check = check;
         this.action = action;
         this.mention = mention;

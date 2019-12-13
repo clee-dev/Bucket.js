@@ -89,7 +89,7 @@ async function messageReceived(message) {
 	const results = potential.map(b => ({
 		action: b.action,
 		data: await b.check(context)
-	}));
+	})).filter(r => chance(config.chances[r.name] || 100));
 
 	const final = results.find(r => r.data);
 	await final.action(context, final.data);

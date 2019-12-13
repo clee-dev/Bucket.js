@@ -17,7 +17,7 @@ const disabled = [
 ];
 
 const enabled = [
-    new B(async ({ message, db }) => { // haiku
+    new B('core:haiku', async ({ message, db }) => {
         const ref = await db
             .collection('state')
             .doc('recentSyllables')
@@ -46,7 +46,7 @@ const enabled = [
         message.channel.send('Was that a haiku?');
     }),
 
-    new B(async ({ message }) => { // receiving items
+    new B('core:receive-item', async ({ message }) => {
         const regex = /([_\*]gives bucket (.+)[_\*])|([_\*]puts (.+) in bucket([^a-zA-Z].*)[_\*]?)|([_\*]gives (.+) to bucket([^a-zA-Z].*)[_\*]?)/i;
         const groups = regex.exec(message.content);
         return groups && groups.filter(x => x);
@@ -83,7 +83,7 @@ const enabled = [
         }
     }),
     
-    new B(async ({ message }) => message.match(/^(\*uses .+\*|_uses .+_)$/i), // pokemon attack
+    new B('core:pokemon-attack', async ({ message }) => message.match(/^(\*uses .+\*|_uses .+_)$/i),
     async ({ message }) => {
 		switch (getRandomInt(1, 4)) {
 			case 1:
@@ -101,21 +101,21 @@ const enabled = [
 		}
     }),
 
-    new B(async ({ message }) => message.content.match(/^say (.+)/i, // say blah => blah
+    new B('core:say-literal', async ({ message }) => message.content.match(/^say (.+)/i,
         async ({ message }, matches) => message.channel.send(matches[1]))),
 
-    new B(async ({ message }) => /^buckety bucket$/i.test(message.content),
+    new B('core:buckety-bucket', async ({ message }) => /^buckety bucket$/i.test(message.content),
     async ({ message }) => {
         const user = message.author;
         message.channel.send(`${user.username}ity ${user.username}`);
     }),
 
-    new B(async ({ message }) => { // 3-word tumblr
+    new B('core:3-word-tumblr', async ({ message }) => {
         const words = getWords(message.content);
         return words.length === 3 && !hasDuplicates(words) && words;
     }, async ({ message }, words) => message.channel.send(`https://${words.join('')}.tumblr.com`)),
     
-    new B(async ({ message }) => { // good band name
+    new B('core:good-band-name', async ({ message }) => {
         const words = getWords(message.content);
         return words.length === 3 && !hasDuplicates(words) && words;
     }, async ({ message, db }, words) => {
@@ -139,7 +139,7 @@ const enabled = [
 			.set({ name: bandName, acronym: tla });
     }),
     
-    new B(async ({ message, db }) => { // three-letter acronym
+    new B('core:three-letter-acronym', async ({ message, db }) => {
         const words = getWords(message.content);
         const TLA = words.find(x => x.length === 3 && x === x.toUpperCase());
         if (!TLA) return false;

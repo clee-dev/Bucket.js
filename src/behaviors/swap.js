@@ -7,7 +7,7 @@ const disabled = [
 ];
 
 const enabled = [
-    new B(async ({ message }) => { // swap ex => sex
+    new B('swap:ex-to-sex', async ({ message }) => {
 		const m = message.content.replace(/\bex\w+(?!:)\b/i, (match) => {
 			const isUppercase = match[0].toUpperCase() === match[0];
 			return isUppercase ? 'Sex' : 'sex';
@@ -15,7 +15,7 @@ const enabled = [
         return message.content !== m && m;
     }, async ({ message }, send) => message.channel.send(send)),
     
-    new B(async ({ message }) => { // swap elect => erect
+    new B('swap:elect-to-erect', async ({ message }) => {
 		const m = message.content.replace(/\belect\w+(?!:)\b/i, (match) => {
 			const isUppercase = match[0].toUpperCase() === match[0];
 			return isUppercase ? 'Erect' : 'erect';
@@ -23,7 +23,7 @@ const enabled = [
         return message.content !== m && m;
     }, async ({ message }, send) => message.channel.send(send)),
     
-    new B(async ({ message }) => { // swap the/this fuckin(g) => fuckin(g) the/this
+    new B('swap:the-fucking', async ({ message }) => {
         const m = message.content.replace(/\b(the|this) fucking?\b/i, (match) => match.split(' ').reverse().join(' '));
         return message.content !== m && m;
     }, async ({ message }, send) => message.channel.send(send)),

@@ -290,7 +290,7 @@ function getRandomInt(min, max) {
 
 function chance(percentage) {
 	let i = getRandomInt(1, 100);
-	return i <= percentage;
+	return percentage === 100 || i <= percentage;
 }
 
 function getRandomElement(arr) {

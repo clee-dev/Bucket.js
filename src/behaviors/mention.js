@@ -34,7 +34,7 @@ const disabled = [
 const options = { mention: true, nonmention: false };
 
 const enabled = [
-    new B(async ({ message }) => { // checking inventory
+    new B('mention:check-inventory', async ({ message }) => {
         return secrets.admins[message.author.username] &&
             /^inventory\?$/i.test(message.content);
     }, async ({ message, db }) => {
@@ -50,14 +50,14 @@ const enabled = [
         message.channel.send(out);
     }, { ...options, silent: true }),
 
-    new B(async ({ message }) => {
+    new B('mention:come-back', async ({ message }) => {
         return /^come back[.?!]*$/i.test(message.content);
     }, async ({ message, db }) => {
-        setSilencedState(false, db);
+        await setSilencedState(false, db);
         message.channel.send('\\\\o/');
     }, { ...options, silent: true }),
 
-    new B(async ({ message }) => { // silencing bucket
+    new B('mention:shut-up', async ({ message }) => {
         const shutUpMap = { // in minutes
             [1 * 60 * 1000]: /^(shut up|be quiet) for a min(ute)?\W?$/,
             [5 * 60 * 1000]: /^(shut up|be quiet) for a bit\W?$/,
@@ -67,7 +67,7 @@ const enabled = [
             .find(arr => arr[1].test(message.content.toLowerCase()));
         return valid && valid[0];
     }, async ({ message, db }, timeout) => {
-        setSilencedState(true, db);
+        await setSilencedState(true, db);
         message.channel.send('Okay');
 
         setTimeout(() => {
@@ -75,7 +75,7 @@ const enabled = [
         }, timeout);
     }, options),
 
-    new B(async ({ message, db }) => { // forget last-LEARNED factoid
+    new B('mention:forget-last-learned', async ({ message, db }) => {
         const user = message.author;
         if (/^undo last$/i.test(message.content)) {
             const last = await getLastLearnedFactoidData(db);
@@ -92,7 +92,7 @@ const enabled = [
         message.channel.send(`Okay, ${user.username}, forgetting ${last.X} <${last.Middle}> ${last.Y}`);
     }, options),
 
-    new B(async ({ message, db }) => { // forget last-ACTIVATED factoid
+    new B('mention:forget-last-activated', async ({ message, db }) => {
         const user = message.author;
         if (/^forget that[.?!]*$/i.test(message.content)) {
             const last = await getLastFactoidData(db);
@@ -109,7 +109,7 @@ const enabled = [
 		message.channel.send(`Okay, ${user.username}, forgetting ${last.X} <${last.Middle}> ${last.Y}`);
     }, options),
 
-    new B(async ({ message, db }) => { // describe last-ACTIVATED factoid
+    new B('mention:describe-last-activated', async ({ message, db }) => {
         const user = message.author;
         if (/^what was that[.?!]*$/i.test(message.content)) {
             const last = await getLastFactoidData(db);
@@ -120,7 +120,7 @@ const enabled = [
         message.channel.send(`That was: ${last.X} <${last.Middle}> ${last.Y}`);
     }, options),
 
-    new B(async ({ message }) => message.content.match(/(.+) (<([_^]?[^@].+)>|is|are) (.+)/i), // being taught a factoid
+    new B('mention:learn-factoid', async ({ message }) => message.content.match(/(.+) (<([_^]?[^@].+)>|is|are) (.+)/i),
     async ({ message, db }, matches) => {
 		const x = matches[1];
 		const mid = matches[3] || matches[2];
@@ -130,7 +130,7 @@ const enabled = [
 		else message.channel.send(`Your mom is ${y}!`);
     }, options),
 
-    new B(async ({ message, client }) => {
+    new B('mention:user-quotes', async ({ message, client }) => {
        const matches = message.content.match(/^([^\s]+) quotes$/i);
        if (!matches) return;
 
@@ -150,7 +150,7 @@ const enabled = [
         }
     }, options),
 
-    new B(async ({ message }) => {
+    new B('mention:remember-quote', async ({ message }) => {
         const matches = message.content.match(/^remember ([^\s]+) (.+)/i);
         if (!matches) return;
 
@@ -174,7 +174,7 @@ const enabled = [
         return;
     }, options),
 
-    new B(async ({ message, db }) => {
+    new B('mention:give-present', async ({ message, db }) => {
         const match = message.content.match(/^(i want a|give me a) (present|gift)[.?!]*$/i);
         if (!match) return;
 
@@ -198,12 +198,12 @@ const enabled = [
             .delete();
     }, options),
 
-    new B(async ({ message }) => message.content.test(/^do you know .+/i),
+    new B('mention:do-you-know', async ({ message }) => message.content.test(/^do you know .+/i),
     async ({ message }) => {
         message.channel.send('No, but if you hum a few bars I can fake it.');
     }, options),
 
-    new B(async ({ message }) => message.content.match(/(should (i|we) )?(.+) or (should (i|we) )?([^?!.]+)/i),
+    new B('mention:this-or-that', async ({ message }) => message.content.match(/(should (i|we) )?(.+) or (should (i|we) )?([^?!.]+)/i),
     async ({ message }, matches) => {
 		const X = matches[3];
 		const Y = matches[6];
@@ -212,12 +212,3 @@ const enabled = [
 ];
 
 module.exports = enabled;
-
-/*
-
-    new B((message, db) => {
-
-    }, (data, message, db) => {
-
-    }, options),
-*/

@@ -1,4 +1,11 @@
 {
 	"debug": false,
-	"inventorySize": 20
+	"inventorySize": 20,
+	"chances": {
+		"swap:ex-to-sex": 1,
+		"swap:elect-to-erect": 1,
+		"new:sarcastic": 2,
+		"core:3-word-tumblr": 3,
+		"core:good-band-name": 3
+	}
 }

@@ -22,7 +22,7 @@ const disabled = [
 
     // swear jar
     // disabled until i can find a better bad word detector
-    new B(async ({ message }) => filter.isProfane(message.content),
+    new B('swear-jar:take-money', async ({ message }) => filter.isProfane(message.content),
     async ({ message, db }) => {
         const user = message.author;
 		//*takes a quarter | dime from ${user} and puts it in the swear jar*

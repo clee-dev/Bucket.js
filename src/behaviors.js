@@ -13,7 +13,7 @@ const runFactoid =
             const matchingFactoids = await detectedFactoids(message.content.toLowerCase(), db);
             return matchingFactoids.length && matchingFactoids;
         }, async ({ message, db }) => {
-            processFactoid(matchingFactoids, message, db);
+            await processFactoid(matchingFactoids, message, db);
         }, { mention: true, nonmention: true, silent: false }
     );
 

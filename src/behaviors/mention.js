@@ -10,7 +10,7 @@ const {
     getLastLearnedFactoidData,
     chance,
     getRandomElement,
-} = require('./util.js');
+} = require('../util.js');
 
 const disabled = [
     /*

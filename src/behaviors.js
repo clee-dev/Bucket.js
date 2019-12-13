@@ -2,6 +2,7 @@ const coreBehaviors = require('./behaviors/core.js');
 const swapBehaviors = require('./behaviors/swap.js');
 const newBehaviors = require('./behaviors/new.js');
 const mentionBehaviors = require('./behaviors/mention.js');
+const B = require('./B.js');
 
 const {
     detectedFactoids,

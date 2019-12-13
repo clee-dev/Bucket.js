@@ -14,7 +14,7 @@ const runFactoid =
             return matchingFactoids.length && matchingFactoids;
         }, async ({ message, db }) => {
             processFactoid(matchingFactoids, message, db);
-        }, { mention: true, nonmention: true }
+        }, { mention: true, nonmention: true, silent: false }
     );
 
 const allBehaviors = [

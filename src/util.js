@@ -58,7 +58,9 @@ async function getFactoid(x, mid, y) {
 	} else return undefined;
 }
 
-async function learnNewFactoid(x, mid, y, user, channel) {
+async function learnNewFactoid(x, mid, y, message) {
+	const user = message.author;
+	const channel = message.channel;
 	let known = await getFactoid(x, mid, y);
 
 	if (known) {
@@ -86,21 +88,6 @@ async function unlearnFactoid(x, mid, y) {
 			.collection('factoids')
 			.doc(f.id)
 			.delete();
-	}
-}
-
-async function learn(words) {
-	words = words.filter(x => x);
-	if (words.length < 3) return;
-	let len = words.length - 2;
-
-	for (let i = 0; i < len; i++) {
-		let docRef = db
-			.collection('words')
-			.doc(words[i])
-			.collection(words[i + 1])
-			.doc(words[i + 2]);
-		incrementDocField(docRef, 'count', 1);
 	}
 }
 
@@ -165,19 +152,19 @@ function escapeRegExp(string) {
 }
 
 async function processFactoid(matchingFactoids, message) {
-	let middleRegex = /^[\^\_]/g;
+	const middleRegex = /^[\^\_]/g;
 	if (!chance(1)) matchingFactoids = matchingFactoids.filter(x => x.Middle.replace(middleRegex, '') !== 'swap');
 	// TODO figure out why the above line exists and why it's a 99% CHANCE???
 
-	let lastFactoid = await getLastFactoidData();
+	const lastFactoid = await getLastFactoidData();
 
-	let factoid = getRandomElement(matchingFactoids);
+	const factoid = getRandomElement(matchingFactoids);
 	if (factoid === lastFactoid && matchingFactoids.length >= 2) factoid = getRandomElement(matchingFactoids); //this could be done better
 
-	let channel = message.channel;
-	let x = factoid.X;
-	let mid = factoid.Middle;
-	let y = factoid.Y;
+	const channel = message.channel;
+	const x = factoid.X;
+	const mid = factoid.Middle;
+	const y = factoid.Y;
 
 	//remove starting _ or ^
 	//TODO: Figure out what the "^" prefix does. Case-sensitivity maybe?
@@ -323,7 +310,6 @@ module.exports = {
     getFactoid,
     learnNewFactoid,
     unlearnFactoid,
-    learn,
     getSilencedState,
     setSilencedState,
     expUp,

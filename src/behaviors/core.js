@@ -6,8 +6,6 @@ const config = require('../config.json');
 
 const {
     getWords,
-    detectedFactoids,
-    processFactoid,
     getInventory,
     getRandomInt,
     chance,
@@ -19,7 +17,7 @@ const disabled = [
 ];
 
 const enabled = [
-    new B(async (message, db) => { // haiku
+    new B(async ({ message, db }) => { // haiku
         const ref = await db
             .collection('state')
             .doc('recentSyllables')
@@ -31,10 +29,10 @@ const enabled = [
             return false;
         }
 
-        const arr = ref.data().arr;
+        const previous = ref.data().arr;
         const recentSyllables = [
-            data[1],
-            data[2],
+            previous[1],
+            previous[2],
             syllable(message)
         ];
         db.collection('state')
@@ -44,15 +42,15 @@ const enabled = [
         return recentSyllables[0] === 5 &&
             recentSyllables[1] === 7 &&
             recentSyllables[2] === 5;
-    }, async (data, message, db) => {
+    }, async ({ message }) => {
         message.channel.send('Was that a haiku?');
     }),
 
-    new B(async (message, db) => { // receiving items
+    new B(async ({ message }) => { // receiving items
         const regex = /([_\*]gives bucket (.+)[_\*])|([_\*]puts (.+) in bucket([^a-zA-Z].*)[_\*]?)|([_\*]gives (.+) to bucket([^a-zA-Z].*)[_\*]?)/i;
-        const groups = itemDetection.exec(message.content);
+        const groups = regex.exec(message.content);
         return groups && groups.filter(x => x);
-    }, async (groups, message, db) => {
+    }, async ({ message, db }, groups) => {
         // groups[2] is the item
         const item = groups[2];
         const inventory = await getInventory();
@@ -72,7 +70,7 @@ const enabled = [
             + giveStr
             + getRandomElement(['now contains', 'is now carrying', 'is now holding'])
             + ` ${item}*`;
-        channel.send(str);
+        message.channel.send(str);
 
         db.collection('items')
             .doc(item)
@@ -85,42 +83,42 @@ const enabled = [
         }
     }),
     
-    new B(async (message, db) => message.match(/^(\*uses .+\*|_uses .+_)$/i), // pokemon attack
-    async (matches, message, db) => {
+    new B(async ({ message }) => message.match(/^(\*uses .+\*|_uses .+_)$/i), // pokemon attack
+    async ({ message }) => {
 		switch (getRandomInt(1, 4)) {
 			case 1:
-				channel.send('It has no effect.');
+				message.channel.send('It has no effect.');
 				break;
 			case 2:
-				channel.send("It's not very effective.");
+				message.channel.send("It's not very effective.");
 				break;
 			case 3:
-				channel.send('It hits!');
+				message.channel.send('It hits!');
 				break;
 			case 4:
-				channel.send("It's super effective!");
+				message.channel.send("It's super effective!");
 				break;
 		}
     }),
 
-    new B(async (message, db) => message.content.match(/^say (.+)/i, // say blah => blah
-        async (matches, message, db) => message.channel.send(matches[1]))),
+    new B(async ({ message }) => message.content.match(/^say (.+)/i, // say blah => blah
+        async ({ message }, matches) => message.channel.send(matches[1]))),
 
-    new B(async (message, db) => /^buckety bucket$/i.test(message.content),
-    async (data, message, db) => {
+    new B(async ({ message }) => /^buckety bucket$/i.test(message.content),
+    async ({ message }) => {
         const user = message.author;
         message.channel.send(`${user.username}ity ${user.username}`);
     }),
 
-    new B(async (message, db) => { // 3-word tumblr
+    new B(async ({ message }) => { // 3-word tumblr
         const words = getWords(message.content);
         return words.length === 3 && !hasDuplicates(words) && words;
-    }, async (words, message, db) => message.channel.send(`https://${words.join('')}.tumblr.com`)),
+    }, async ({ message }, words) => message.channel.send(`https://${words.join('')}.tumblr.com`)),
     
-    new B(async (message, db) => { // good band name
+    new B(async ({ message }) => { // good band name
         const words = getWords(message.content);
         return words.length === 3 && !hasDuplicates(words) && words;
-    }, async (words, message, db) => {
+    }, async ({ message, db }, words) => {
         // "[<phrase>|that] would [make|be] a [good|nice] name for a band."
 		//made up a % chance to trigger - XCKD Bucket does something more complex
 		const bandName = words.map(x => x[0].toUpperCase() + x.substring(1).toLowerCase()).join(' ');
@@ -141,7 +139,7 @@ const enabled = [
 			.set({ name: bandName, acronym: tla });
     }),
     
-    new B(async (message, db) => { // three-letter acronym
+    new B(async ({ message, db }) => { // three-letter acronym
         const words = getWords(message.content);
         const TLA = words.find(x => x.length === 3 && x === x.toUpperCase());
         if (!TLA) return false;
@@ -150,7 +148,7 @@ const enabled = [
             .where('acronym', '==', TLA)
             .get();
         return !bands.empty && { TLA, bands };
-    }, async ({ TLA, bands }, message, db) => {
+    }, async ({ message }, { TLA, bands }) => {
         // "<TLA> could mean <bandName>"
         const meaning = getRandomElement(bands.docs).data().name;
         message.channel.send(`${TLA} could mean ${meaning}`);

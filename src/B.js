@@ -1,5 +1,12 @@
 class B {
-    constructor(check, action, { mention = false, nonmention = true, silent = false } = { mention: false, nonmention: true, silent: false }) {
+    constructor(
+        check,
+        action,
+        {
+            mention = false,
+            nonmention = true,
+            silent = false
+        } = { mention: false, nonmention: true, silent: false }) {
         this.check = check;
         this.action = action;
         this.mention = mention;

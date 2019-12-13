@@ -11,7 +11,7 @@ const disabled = [
     	//disabled because it happens way too much, even at 2%
         if (false && words.length <= 6 && chance(2)) {
             let sarcastic = client.emojis.find(emoji => emoji.name === 'sarcastic');
-            channel.send(
+            message.channel.send(
                 Array.from(lower)
                     .map(x => (chance(50) ? x.toUpperCase() : x.toLowerCase()))
                     .join('') + (sarcastic ? ` ${sarcastic}` : '')
@@ -22,8 +22,8 @@ const disabled = [
 
     // swear jar
     // disabled until i can find a better bad word detector
-    new B(async (message, db) => filter.isProfane(message.content),
-    async (data, message, db) => {
+    new B(async ({ message }) => filter.isProfane(message.content),
+    async ({ message, db }) => {
         const user = message.author;
 		//*takes a quarter | dime from ${user} and puts it in the swear jar*
 		const coin = getRandomElement([{ name: 'quarter', value: 25 }, { name: 'dime', value: 10 }]);

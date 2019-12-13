@@ -1,6 +1,5 @@
 const uuid = require('uuid/v4');
 const admin = require('firebase-admin');
-const db = admin.firestore();
 
 const regex = {
 	punct: /[\?!.;'"():]+/gm,
@@ -44,7 +43,7 @@ function respondVaguely(sourceMessage) {
     ])));
 }
 
-async function getFactoid(x, mid, y) {
+async function getFactoid(x, mid, y, db) {
 	let f = await db
 		.collection('factoids')
 		.where('X', '==', x)
@@ -58,10 +57,10 @@ async function getFactoid(x, mid, y) {
 	} else return undefined;
 }
 
-async function learnNewFactoid(x, mid, y, message) {
+async function learnNewFactoid(x, mid, y, message, db) {
 	const user = message.author;
 	const channel = message.channel;
-	let known = await getFactoid(x, mid, y);
+	let known = await getFactoid(x, mid, y, db);
 
 	if (known) {
 		channel.send(`I already do that, ${user.username}`);
@@ -76,13 +75,13 @@ async function learnNewFactoid(x, mid, y, message) {
 				Y: y,
 				user: { id: user.id, username: user.username },
 			});
-		setLastLearnedFactoid(id);
+		setLastLearnedFactoid(id, db);
 		channel.send(`Okay, ${user.username}${chance(50) ? ", I'll remember that." : ''}`);
 	}
 }
 
-async function unlearnFactoid(x, mid, y) {
-	let f = await getFactoid(x, mid, y);
+async function unlearnFactoid(x, mid, y, db) {
+	let f = await getFactoid(x, mid, y, db);
 	if (f) {
 		await db
 			.collection('factoids')
@@ -91,7 +90,7 @@ async function unlearnFactoid(x, mid, y) {
 	}
 }
 
-async function getSilencedState() {
+async function getSilencedState(db) {
 	let r = await db
 		.collection('state')
 		.doc('silenced')
@@ -101,7 +100,7 @@ async function getSilencedState() {
 	} else return false;
 }
 
-async function setSilencedState(bool) {
+async function setSilencedState(bool, db) {
 	await db
 		.collection('state')
 		.doc('silenced')
@@ -119,7 +118,7 @@ function convertVars(contextMessage, source) {
 		.replace(/\$@someone/g, `<@${getRandomElement(getUsersFromGuild(contextMessage.guild).map(x => x.id))}>`);
 }
 
-async function detectedFactoids(msg) {
+async function detectedFactoids(msg, db) {
 	let factoids = await db.collection('factoids').get();
 	let matches = [];
 	if (!factoids.empty) {
@@ -151,12 +150,12 @@ function escapeRegExp(string) {
 	return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 }
 
-async function processFactoid(matchingFactoids, message) {
+async function processFactoid(matchingFactoids, message, db) {
 	const middleRegex = /^[\^\_]/g;
 	if (!chance(1)) matchingFactoids = matchingFactoids.filter(x => x.Middle.replace(middleRegex, '') !== 'swap');
 	// TODO figure out why the above line exists and why it's a 99% CHANCE???
 
-	const lastFactoid = await getLastFactoidData();
+	const lastFactoid = await getLastFactoidData(db);
 
 	const factoid = getRandomElement(matchingFactoids);
 	if (factoid === lastFactoid && matchingFactoids.length >= 2) factoid = getRandomElement(matchingFactoids); //this could be done better
@@ -171,31 +170,31 @@ async function processFactoid(matchingFactoids, message) {
 	switch (factoid.Middle.replace(middleRegex, '')) {
 		case "'s":
 			channel.send(`${x}'s ${convertVars(message, y)}`);
-			setLastFactoid(factoid.id);
+			setLastFactoid(factoid.id, db);
 			break;
 		case 'reply':
 			channel.send(`${convertVars(message, y)}`);
-			setLastFactoid(factoid.id);
+			setLastFactoid(factoid.id, db);
 			break;
 		case 'action':
 			channel.send(`*${convertVars(message, y)}*`);
-			setLastFactoid(factoid.id);
+			setLastFactoid(factoid.id, db);
 			break;
 		case 'swap':
 			let r = new RegExp(escapeRegExp(x), 'gi');
 			channel.send(`${message.content.replace(r, convertVars(message, y))}`);
-			setLastFactoid(factoid.id);
+			setLastFactoid(factoid.id, db);
 			break;
 		case 'is':
 		case 'are':
 		default:
 			channel.send(`${x} ${mid} ${convertVars(message, y)}`);
-			setLastFactoid(factoid.id);
+			setLastFactoid(factoid.id, db);
 			break;
 	}
 }
 
-async function getInventory() {
+async function getInventory(db) {
 	let inventory = [];
 	let invRef = db.collection('items');
 	let invGet = await invRef.get();
@@ -206,7 +205,7 @@ async function getInventory() {
 }
 
 //returns a reference
-async function getLastFactoid() {
+async function getLastFactoid(db) {
 	let f = await db
 		.collection('state')
 		.doc('lastFactoid')
@@ -214,8 +213,8 @@ async function getLastFactoid() {
 	if (f.exists) return await db.collection('factoids').doc(f.data().id);
 	else return undefined;
 }
-async function getLastFactoidData() {
-	let f = await getLastFactoid();
+async function getLastFactoidData(db) {
+	let f = await getLastFactoid(db);
 	if (f) {
 		try {
 			let x = await f.get();
@@ -228,7 +227,7 @@ async function getLastFactoidData() {
 	} else return undefined;
 }
 
-async function setLastFactoid(id) {
+async function setLastFactoid(id, db) {
 	await db
 		.collection('state')
 		.doc('lastFactoid')
@@ -236,7 +235,7 @@ async function setLastFactoid(id) {
 }
 
 //returns a reference
-async function getLastLearnedFactoid() {
+async function getLastLearnedFactoid(db) {
 	let f = await db
 		.collection('state')
 		.doc('lastLearnedFactoid')
@@ -244,8 +243,8 @@ async function getLastLearnedFactoid() {
 	if (f.exists) return await db.collection('factoids').doc(f.data().id);
 	else return undefined;
 }
-async function getLastLearnedFactoidData() {
-	let f = await getLastLearnedFactoid();
+async function getLastLearnedFactoidData(db) {
+	let f = await getLastLearnedFactoid(db);
 	if (f) {
 		try {
 			let x = await f.get();
@@ -258,7 +257,7 @@ async function getLastLearnedFactoidData() {
 	} else return undefined;
 }
 
-async function setLastLearnedFactoid(id) {
+async function setLastLearnedFactoid(id, db) {
 	await db
 		.collection('state')
 		.doc('lastLearnedFactoid')
@@ -307,7 +306,6 @@ module.exports = {
     getWords,
     filterNonWords,
     respondVaguely,
-    getFactoid,
     learnNewFactoid,
     unlearnFactoid,
     getSilencedState,

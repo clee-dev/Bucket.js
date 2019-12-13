@@ -37,9 +37,9 @@ const enabled = [
     new B(async ({ message }) => { // checking inventory
         return secrets.admins[message.author.username] &&
             /^inventory\?$/i.test(message.content);
-    }, async ({ message }) => {
+    }, async ({ message, db }) => {
         let out = '';
-        const inventory = await getInventory();
+        const inventory = await getInventory(db);
         inventory.forEach(item => {
             if (item.name.startsWith('his') || item.name.startsWith('her'))
                 out += `${item.user.username}'s ${item.name.substring(4)}, `;
@@ -52,8 +52,8 @@ const enabled = [
 
     new B(async ({ message }) => {
         return /^come back[.?!]*$/i.test(message.content);
-    }, async ({ message }) => {
-        setSilencedState(false);
+    }, async ({ message, db }) => {
+        setSilencedState(false, db);
         message.channel.send('\\\\o/');
     }, { ...options, silent: true }),
 
@@ -66,25 +66,25 @@ const enabled = [
         const valid = Object.entries(shutUpMap)
             .find(arr => arr[1].test(message.content.toLowerCase()));
         return valid && valid[0];
-    }, async ({ message }, timeout) => {
-        setSilencedState(true);
+    }, async ({ message, db }, timeout) => {
+        setSilencedState(true, db);
         message.channel.send('Okay');
 
         setTimeout(() => {
-            setSilencedState(false);
+            setSilencedState(false, db);
         }, timeout);
     }, options),
 
-    new B(async ({ message }) => { // forget last-LEARNED factoid
+    new B(async ({ message, db }) => { // forget last-LEARNED factoid
         const user = message.author;
         if (/^undo last$/i.test(message.content)) {
-            const last = getLastLearnedFactoidData();
+            const last = await getLastLearnedFactoidData(db);
             return (secrets.admins[user.username] || last.user.id === user.id) &&
                 last;
         }
     }, async ({ message, db }, last) => {
         const user = message.author;
-        await unlearnFactoid(last.X, last.Middle, last.Y);
+        await unlearnFactoid(last.X, last.Middle, last.Y, db);
         db.collection('state')
             .doc('lastLearnedFactoid')
             .delete();
@@ -92,16 +92,16 @@ const enabled = [
         message.channel.send(`Okay, ${user.username}, forgetting ${last.X} <${last.Middle}> ${last.Y}`);
     }, options),
 
-    new B(async ({ message }) => { // forget last-ACTIVATED factoid
+    new B(async ({ message, db }) => { // forget last-ACTIVATED factoid
         const user = message.author;
         if (/^forget that[.?!]*$/i.test(message.content)) {
-            const last = getLastFactoidData();
+            const last = await getLastFactoidData(db);
             return (secrets.admins[user.username] || last.user.id === user.id) &&
                 last;
         }
     }, async ({ message, db }, last) => {
         const user = message.author;
-        await unlearnFactoid(last.X, last.Middle, last.Y);
+        await unlearnFactoid(last.X, last.Middle, last.Y, db);
         db.collection('state')
             .doc('lastFactoid')
             .delete();
@@ -109,10 +109,10 @@ const enabled = [
 		message.channel.send(`Okay, ${user.username}, forgetting ${last.X} <${last.Middle}> ${last.Y}`);
     }, options),
 
-    new B(async ({ message }) => { // describe last-ACTIVATED factoid
+    new B(async ({ message, db }) => { // describe last-ACTIVATED factoid
         const user = message.author;
         if (/^what was that[.?!]*$/i.test(message.content)) {
-            const last = await getLastFactoidData();
+            const last = await getLastFactoidData(db);
             return (secrets.admins[user.username] || last.user.id === user.id) &&
                 last;
         }
@@ -121,12 +121,12 @@ const enabled = [
     }, options),
 
     new B(async ({ message }) => message.content.match(/(.+) (<([_^]?[^@].+)>|is|are) (.+)/i), // being taught a factoid
-    async ({ message }, matches) => {
+    async ({ message, db }, matches) => {
 		const x = matches[1];
 		const mid = matches[3] || matches[2];
 		const y = matches[4];
 
-		if (chance(98)) learnNewFactoid(x, mid, y, message);
+		if (chance(98)) learnNewFactoid(x, mid, y, message, db);
 		else message.channel.send(`Your mom is ${y}!`);
     }, options),
 
@@ -174,11 +174,11 @@ const enabled = [
         return;
     }, options),
 
-    new B(async ({ message }) => {
+    new B(async ({ message, db }) => {
         const match = message.content.match(/^(i want a|give me a) (present|gift)[.?!]*$/i);
         if (!match) return;
 
-        const inv = await getInventory();
+        const inv = await getInventory(db);
         return inv.length && inv; // [] is truthy
     }, async ({ message, db }, inventory) => {
         const give = getRandomElement(inventory);

@@ -9,11 +9,11 @@ const {
 } = require('./util.js');
 
 const runFactoid =
-    new B(async ({ message }) => { // factoids
-            const matchingFactoids = await detectedFactoids(message.content.toLowerCase());
+    new B(async ({ message, db }) => { // factoids
+            const matchingFactoids = await detectedFactoids(message.content.toLowerCase(), db);
             return matchingFactoids.length && matchingFactoids;
-        }, async (_, { message }) => {
-            processFactoid(matchingFactoids, message);
+        }, async ({ message, db }) => {
+            processFactoid(matchingFactoids, message, db);
         }, { mention: true, nonmention: true }
     );
 

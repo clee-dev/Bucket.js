@@ -53,7 +53,7 @@ const enabled = [
     }, async ({ message, db }, groups) => {
         // groups[2] is the item
         const item = groups[2];
-        const inventory = await getInventory();
+        const inventory = await getInventory(db);
         if (inventory.some(x => x.name === item)) {
             message.channel.send("No thanks, I've already got that");
             return;

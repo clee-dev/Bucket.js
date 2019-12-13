@@ -74,7 +74,7 @@ async function messageReceived(message) {
 	//check if mentioned
 	const mentionBucketRegex = /^bucket[,:].*|.+, ?bucket[.?!]*$/i;
 	const mentioned = message.isMentioned(client.user) || mentionBucketRegex.test(message.content);
-	const silenced = await getSilencedState();
+	const silenced = await getSilencedState(db);
 	
 	const context = {
 		message,

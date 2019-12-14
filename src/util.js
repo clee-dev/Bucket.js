@@ -1,5 +1,6 @@
 const uuid = require('uuid/v4');
 const admin = require('firebase-admin');
+const validUrl = require('valid-url');
 
 const regex = {
 	punct: /[\?!.;'"():]+/gm,

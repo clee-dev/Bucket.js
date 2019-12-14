@@ -198,7 +198,7 @@ const enabled = [
             .delete();
     }, options),
 
-    new B('mention:do-you-know', async ({ message }) => message.content.test(/^do you know .+/i),
+    new B('mention:do-you-know', async ({ message }) => /^do you know .+/i.test(message.content),
     async ({ message }) => {
         message.channel.send('No, but if you hum a few bars I can fake it.');
     }, options),

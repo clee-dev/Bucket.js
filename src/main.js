@@ -113,7 +113,7 @@ async function messageReceived(message) {
 	console.log('FINAL POTENTIAL RESPONSES', results);
 
 	const final = results.find(r => r.data);
-  console.log('FINAL RESPONSE', final);
+  	console.log('FINAL RESPONSE', final);
 	await final.action(mentioned ? mentionContext : context, final.data);
 }
 

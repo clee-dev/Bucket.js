@@ -26,6 +26,7 @@ const {
 	incrementDocField,
 	chance,
 	getWords,
+	getSilencedState,
 } = require('./util.js');
 const behaviors = require('./behaviors.js');
 

@@ -83,7 +83,7 @@ const enabled = [
         }
     }),
     
-    new B('core:pokemon-attack', async ({ message }) => message.match(/^(\*uses .+\*|_uses .+_)$/i),
+    new B('core:pokemon-attack', async ({ message }) => message.content.match(/^(\*uses .+\*|_uses .+_)$/i),
     async ({ message }) => {
 		switch (getRandomInt(1, 4)) {
 			case 1:

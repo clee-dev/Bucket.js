@@ -84,23 +84,27 @@ async function messageReceived(message) {
 		db,
 		client
 	};
+	const mentionContext = {
+		message: {
+			...message,
+			content: removeMention(message.content)
+		},
+		db,
+		client
+	};
 
 	const potential = behaviors
 		.filter(b => mentioned && b.mention || !mentioned && b.nonmention)
 		.filter(b => silenced && b.silent || !silenced && !b.silent);
 	
 	console.log('POTENTIAL RESPONSES', potential);
-
-	// const results = potential.map(async (b) => ({
-	// 	action: b.action,
-	// 	data: await b.check(context)
-	// })).filter(r => chance(config.chances[r.name] || 100));
+  
 	let results = [];
 	for (const b of potential) {
 		results.push({
 			name: b.name,
 			action: b.action,
-			data: await b.check(context)
+			data: await b.check(mentioned ? mentionContext : context)
 		});
 	}
 	results = results.filter(r => chance(config.chances[r.name] || 100));
@@ -109,8 +113,16 @@ async function messageReceived(message) {
 	console.log('FINAL POTENTIAL RESPONSES', results);
 
 	const final = results.find(r => r.data);
-	console.log('FINAL RESPONSE', final);
-	await final.action(context, final.data);
+  	console.log('FINAL RESPONSE', final);
+	await final.action(mentioned ? mentionContext : context, final.data);
+}
+
+function removeMention(content) {
+	// TODO regexify
+	if (content.toLowerCase().startsWith('bucket') || content.startsWith(`<@${client.user.id}>`) || content.startsWith(`<@!${client.user.id}>`))
+		return content.substring(content.indexOf(' ') + 1);
+	else
+		return content.substring(0, content.toLowerCase().lastIndexOf(', bucket'));
 }
 
 async function learn(words) {

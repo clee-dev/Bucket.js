@@ -25,7 +25,7 @@ const enabled = [
         if (!ref.exists) {
             db.collection('state')
                 .doc('recentSyllables')
-                .set({ arr: [0, 0, 0] });
+                .set({ arr: [0, 0, syllable(message.content)] });
             return false;
         }
 
@@ -33,7 +33,7 @@ const enabled = [
         const recentSyllables = [
             previous[1],
             previous[2],
-            syllable(message)
+            syllable(message.content)
         ];
         db.collection('state')
             .doc('recentSyllables')

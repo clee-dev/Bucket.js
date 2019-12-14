@@ -24,7 +24,8 @@ const config = require('./config.json');
 
 const {
 	incrementDocField,
-	chance
+	chance,
+	getWords,
 } = require('./util.js');
 const behaviors = require('./behaviors.js');
 
@@ -68,7 +69,7 @@ async function messageReceived(message) {
 		.doc(message.author.id)
 		.set({ name: message.author.username });
 		
-	if (!config.debug) learn(words);
+	if (!config.debug) learn(getWords(message.content));
 
 	//check if mentioned
 	const mentionBucketRegex = /^bucket[,:].*|.+, ?bucket[.?!]*$/i;
@@ -82,8 +83,8 @@ async function messageReceived(message) {
 	};
 
 	const potential = behaviors
-		.filter(b => mentioned && b.mentioned || !mentioned && b.nonmention)
-		.filter(b => silenced && b.silenced || !silenced && !b.silent);
+		.filter(b => mentioned && b.mention || !mentioned && b.nonmention)
+		.filter(b => silenced && b.silent || !silenced && !b.silent);
 
 	// const results = potential.map(async (b) => ({
 	// 	action: b.action,
@@ -92,6 +93,7 @@ async function messageReceived(message) {
 	let results = [];
 	for (const b of potential) {
 		results.push({
+			name: b.name,
 			action: b.action,
 			data: await b.check(context)
 		});
@@ -103,15 +105,14 @@ async function messageReceived(message) {
 }
 
 async function learn(words) {
-	const w = words.filter(x => x);
 	if (words.length < 3) return;
 
-	for (let i = 0; i < w.length - 2; i++) {
+	for (let i = 0; i < words.length - 2; i++) {
 		const docRef = db
 			.collection('words')
-			.doc(w[i])
-			.collection(w[i + 1])
-			.doc(w[i + 2]);
+			.doc(words[i])
+			.collection(words[i + 1])
+			.doc(words[i + 2]);
 		incrementDocField(docRef, 'count', 1);
 	}
 }

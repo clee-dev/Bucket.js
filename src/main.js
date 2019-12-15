@@ -73,7 +73,7 @@ async function messageReceived(message) {
 		.doc(message.author.id)
 		.set({ name: message.author.username });
 		
-	if (!config.debug) learn(getWords(message.content));
+	if (!config.debug && !Object.keys(secrets.logChannels).includes(message.channel.id) && !Object.keys(secrets.debugChannels).includes(message.channel.id)) learn(getWords(message.content));
 
 	//check if mentioned
 	const mentionBucketRegex = /^bucket[,:].*|.+, ?bucket[.?!]*$/i;

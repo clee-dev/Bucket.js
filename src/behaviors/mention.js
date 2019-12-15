@@ -136,7 +136,7 @@ const enabled = [
 
        const name = matches[1];
        const users = Array.from(client.users).map(x => x[1]);
-       return users.find(x => x.username.toLowerCase() === name);
+       return users.find(x => x.username.toLowerCase() === name.toLowerCase());
     }, async ({ message, db }, user) => {
         const quotes = await db
             .collection('quotes')

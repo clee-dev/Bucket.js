@@ -29,6 +29,7 @@ const {
 	getSilencedState,
 } = require('./util.js');
 const behaviors = require('./behaviors.js');
+const log = require('./log.js');
 
 const client = new Discord.Client();
 
@@ -40,9 +41,9 @@ admin.initializeApp({
 const db = admin.firestore();
 
 client.on('ready', () => {
-	console.log(`Logged in as ${client.user.tag}!`);
+	log(client, null, `Logged in as ${client.user.tag}!`);
 
-	const debugChannelIDs = Object.values(secrets.channels);
+	const debugChannelIDs = Object.values(secrets.debugChannels);
 	const debugChannels = client.channels.filter(c => debugChannelIDs.includes(c.id));
 
 	// '<@id1> <@id2> <@id3>'
@@ -63,9 +64,9 @@ client.login(secrets.bucketToken);
 async function messageReceived(message) {
 	if (!message.guild) return; //no DMs
 	if (message.author.id === client.user.id) return;
-	if (config.debug && !secrets.channels[message.channel.name]) return;
+	if (config.debug && !secrets.debugChannels[message.channel.name]) return;
 	
-	console.log('MESSAGE', message);
+	log(client, message, 'MESSAGE', message);
 
 	//if I haven't seen this user before, add them to my database
 	db.collection('users')
@@ -97,7 +98,7 @@ async function messageReceived(message) {
 		.filter(b => mentioned && b.mention || !mentioned && b.nonmention)
 		.filter(b => silenced && b.silent || !silenced && !b.silent);
 	
-	console.log('POTENTIAL RESPONSES', potential);
+	log(client, message, 'POTENTIAL RESPONSES', potential);
   
 	let results = [];
 	for (const b of potential) {
@@ -110,10 +111,10 @@ async function messageReceived(message) {
 	results = results.filter(r => chance(config.chances[r.name] || 100));
 	
 	
-	console.log('FINAL POTENTIAL RESPONSES', results);
+	log(client, message, 'POTENTIAL RESPONSES FILTERED', results);
 
 	const final = results.find(r => r.data);
-  	console.log('FINAL RESPONSE', final);
+  	log(client, message, 'FINAL RESPONSE', final);
 	if (!final) return;
 	await final.action(mentioned ? mentionContext : context, final.data);
 }

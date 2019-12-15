@@ -41,7 +41,7 @@ admin.initializeApp({
 const db = admin.firestore();
 
 client.on('ready', () => {
-	log(client, null, `Logged in as ${client.user.tag}!`);
+	log(client, `Logged in as ${client.user.tag}!`);
 
 	const debugChannelIDs = Object.values(secrets.debugChannels);
 	const debugChannels = client.channels.filter(c => debugChannelIDs.includes(c.id));
@@ -65,6 +65,8 @@ async function messageReceived(message) {
 	if (!message.guild) return; //no DMs
 	if (message.author.id === client.user.id) return;
 	if (config.debug && !secrets.debugChannels[message.channel.name]) return;
+
+	log(client, 'MESSAGE', message.author.username + ': ' + message.content, '#' + message.channel)
 
 	//if I haven't seen this user before, add them to my database
 	db.collection('users')
@@ -107,11 +109,11 @@ async function messageReceived(message) {
 	results = results.filter(r => chance(config.chances[r.name] || 100));
 	
 	
-	log(client, message, 'POTENTIAL RESPONSES', results.map(x => x.name));
+	log(client, 'POTENTIAL RESPONSES', results.map(x => x.name));
 
 	const final = results.find(r => r.data);
 	if (!final) return;
-	log(client, message, 'FINAL RESPONSE', final.name);
+	log(client, 'FINAL RESPONSE', final.name);
 	await final.action(mentioned ? mentionContext : context, final.data);
 }
 

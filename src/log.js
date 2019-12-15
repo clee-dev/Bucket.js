@@ -8,6 +8,6 @@ module.exports = function log(client, sourceMessage, ...args) {
         (sourceMessage ?
             'message: ' + sourceMessage + '\r\n' + 
             'channel: ' + sourceMessage.channel.name + '\r\n' : '') +
-        args.join('\r\n')
+        args.map(a => JSON.stringify(a)).join('\r\n')
     ));
 }

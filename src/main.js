@@ -65,8 +65,6 @@ async function messageReceived(message) {
 	if (!message.guild) return; //no DMs
 	if (message.author.id === client.user.id) return;
 	if (config.debug && !secrets.debugChannels[message.channel.name]) return;
-	
-	log(client, message, 'MESSAGE', message);
 
 	//if I haven't seen this user before, add them to my database
 	db.collection('users')
@@ -97,8 +95,6 @@ async function messageReceived(message) {
 	const potential = behaviors
 		.filter(b => mentioned && b.mention || !mentioned && b.nonmention)
 		.filter(b => silenced && b.silent || !silenced && !b.silent);
-	
-	log(client, message, 'POTENTIAL RESPONSES', potential.map(x => x.name));
   
 	let results = [];
 	for (const b of potential) {
@@ -111,7 +107,7 @@ async function messageReceived(message) {
 	results = results.filter(r => chance(config.chances[r.name] || 100));
 	
 	
-	log(client, message, 'POTENTIAL RESPONSES FILTERED', results.map(x => x.name));
+	log(client, message, 'POTENTIAL RESPONSES', results.map(x => x.name));
 
 	const final = results.find(r => r.data);
 	if (!final) return;

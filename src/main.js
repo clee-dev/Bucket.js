@@ -98,7 +98,7 @@ async function messageReceived(message) {
 		.filter(b => mentioned && b.mention || !mentioned && b.nonmention)
 		.filter(b => silenced && b.silent || !silenced && !b.silent);
 	
-	log(client, message, 'POTENTIAL RESPONSES', potential);
+	log(client, message, 'POTENTIAL RESPONSES', potential.map(x => x.name));
   
 	let results = [];
 	for (const b of potential) {
@@ -111,11 +111,11 @@ async function messageReceived(message) {
 	results = results.filter(r => chance(config.chances[r.name] || 100));
 	
 	
-	log(client, message, 'POTENTIAL RESPONSES FILTERED', results);
+	log(client, message, 'POTENTIAL RESPONSES FILTERED', results.map(x => x.name));
 
 	const final = results.find(r => r.data);
-  	log(client, message, 'FINAL RESPONSE', final);
 	if (!final) return;
+	log(client, message, 'FINAL RESPONSE', final.name);
 	await final.action(mentioned ? mentionContext : context, final.data);
 }
 

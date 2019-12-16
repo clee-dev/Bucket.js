@@ -173,7 +173,7 @@ const enabled = [
         message.channel.send(`Okay, remembering ${message.author.username} said ${remember}`);
         db.collection('quotes')
             .doc(uuid())
-            .set({ user: { id: message.author.id, username: message.author.username }, quote: remember });
+            .set({ user: { id: message.author.id, username: message.author.username }, quote: remember.content });
         return;
     }, options),
 

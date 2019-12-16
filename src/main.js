@@ -21,6 +21,7 @@ const admin = require('firebase-admin');
 const secrets = require('./secrets.json');
 const config = require('./config.json');
 // const serviceAccount = require('./serviceaccount_key.json'); //uncomment for local testing
+const shell = require('child_process').exec;
 
 const {
 	incrementDocField,
@@ -48,7 +49,10 @@ client.on('ready', () => {
 	// 'Logged in as <tag>'
 	const adminIDs = Object.values(secrets.admins);
 	const adminsPing = adminIDs.map(id => '<@' + id + '>').join(' ');
-	logger.log(adminsPing + '\r\n' + `Logged in as ${client.user.tag}!`);
+	shell('git log -1', (err, stdout) => {
+		logger.log(adminsPing,`Logged in as ${client.user.tag}!`);
+		logger.logInner(stdout);
+	});
 });
 
 client.on('message', msg => {
@@ -62,7 +66,7 @@ async function messageReceived(message) {
 	if (message.author.id === client.user.id) return;
 	if (config.debug && !secrets.debugChannels[message.channel.name]) return;
 
-	logger.log(`${message.author.username}: ${message.content}`, '#' + message.channel);
+	logger.log(`${message.author.username}: ${message.content}`, message.channel);
 
 	//if I haven't seen this user before, add them to my database
 	db.collection('users')

@@ -120,7 +120,7 @@ async function messageReceived(message) {
 	logger.logInner('POTENTIAL RESPONSES', results.map(x => x.name));
 
 	const final = results.find(r => r.data);
-	logger.logInner('FINAL RESPONSE', final.name);
+	logger.logInner('FINAL RESPONSE', final && final.name);
 	if (!final) return;
 
 	logger.logInner('FINAL RESPONSE', final.name);

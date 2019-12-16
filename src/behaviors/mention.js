@@ -1,3 +1,5 @@
+const uuid = require('uuid/v4');
+
 const B = require('../B.js');
 const secrets = require('../secrets.json');
 

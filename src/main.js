@@ -29,9 +29,10 @@ const {
 	getSilencedState,
 } = require('./util.js');
 const behaviors = require('./behaviors.js');
-const logging = require('./log.js');
+const logger = require('./log.js');
 
 const client = new Discord.Client();
+let logger;
 
 admin.initializeApp({
 	// credential: admin.credential.cert(serviceAccount), //uncomment for local testing
@@ -41,14 +42,13 @@ admin.initializeApp({
 const db = admin.firestore();
 
 client.on('ready', () => {
-	logging.config(client);
+	logger = new logger(client, secrets.logChannels);
 
 	// '<@id1> <@id2> <@id3>'
 	// 'Logged in as <tag>'
 	const adminIDs = Object.values(secrets.admins);
 	const adminsPing = adminIDs.map(id => '<@' + id + '>').join(' ');
-	const message = adminsPing + '\r\n' + 'I just restarted!';
-	logging.log(message + '\r\n' + `Logged in as ${client.user.tag}!`);
+	logger.log(adminsPing + '\r\n' + `Logged in as ${client.user.tag}!`);
 });
 
 client.on('message', msg => {
@@ -62,7 +62,7 @@ async function messageReceived(message) {
 	if (message.author.id === client.user.id) return;
 	if (config.debug && !secrets.debugChannels[message.channel.name]) return;
 
-	logging.log('MESSAGE', `${message.author.username}: ${message.content}`, message.channel);
+	logger.log('MESSAGE', `${message.author.username}: ${message.content}`, '#' + message.channel.name);
 
 	//if I haven't seen this user before, add them to my database
 	db.collection('users')
@@ -110,13 +110,13 @@ async function messageReceived(message) {
 	results = results.filter(r => chance(config.chances[r.name] || 100));
 	
 	
-	logging.logInner('POTENTIAL RESPONSES', results.map(x => x.name));
+	logger.logInner('POTENTIAL RESPONSES', results.map(x => x.name));
 
 	const final = results.find(r => r.data);
-	logging.logInner('FINAL RESPONSE', final);
+	logger.logInner('FINAL RESPONSE', final);
 	if (!final) return;
 
-	logging.logInner('FINAL RESPONSE', final.name);
+	logger.logInner('FINAL RESPONSE', final.name);
 	await final.action(mentioned ? mentionContext : context, final.data);
 }
 

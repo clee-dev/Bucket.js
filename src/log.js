@@ -1,26 +1,24 @@
-const secrets = require('./secrets.json');
-const logChannelIDs = Object.values(secrets.logChannels);
+module.exports = class Logger {
+    constructor(client, logChannels) {
+        const logChannelIDs = Object.values(logChannels);
+        this.channels = client.channels.filter(c => logChannelIDs.includes(c.id));
+    }
 
-let logChannels = [];
-const format = args => args.map(a => JSON.stringify(a)).join('\r\n');
-const postInLogChannels = msg => logChannels.forEach(channel => channel.send(msg));
+    log(...args) {
+        console.log(...args);
+        this.postInChannels(args.join('\r\n'));
+    }
 
-function config(client) {
-    logChannels = client.channels.filter(c => logChannelIDs.includes(c.id));
+    logInner(...args) {
+        console.log(...args);
+        this.postInChannels('>>>' + this.str(args));
+    }
+
+    str(args) {
+        return args.map(a => JSON.stringify(a)).join('\r\n');
+    }
+
+    postInChannels(msg) {
+        this.channels.forEach(channel => channel.send(msg));
+    }
 }
-
-function log(...args) {
-    console.log(...args);
-    postInLogChannels(format(args));
-}
-
-function logInner(...args) {
-    console.log(...args);
-    postInLogChannels('>>>' + format(args));
-}
-
-module.exports = {
-    config,
-    log,
-    logInner,
-};

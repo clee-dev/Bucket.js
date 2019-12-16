@@ -74,7 +74,7 @@ const enabled = [
 
         db.collection('items')
             .doc(item)
-            .set({ name: item, user: { id: user.id, username: user.username } });
+            .set({ name: item, user: { id: message.author.id, username: message.author.username } });
 
         if (give) {
             db.collection('items')

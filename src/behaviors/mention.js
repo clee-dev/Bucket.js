@@ -171,10 +171,10 @@ const enabled = [
         log(remember.content);
         return remember;
     }, async ({ message, db }, remember) => {
-        message.channel.send(`Okay, remembering ${user.username} said ${remember}`);
+        message.channel.send(`Okay, remembering ${message.author.username} said ${remember}`);
         db.collection('quotes')
             .doc(uuid())
-            .set({ user: { id: user.id, username: user.username }, quote: remember });
+            .set({ user: { id: message.author.id, username: message.author.username }, quote: remember });
         return;
     }, options),
 

@@ -152,6 +152,7 @@ const enabled = [
 
     new B('mention:remember-quote', async ({ message, client, log }) => {
         const matches = message.content.match(/^remember ([^\s]+) (.+)/i);
+        log(matches);
         if (!matches) return;
 
         const name = matches[1];

@@ -51,7 +51,7 @@ client.on('ready', () => {
 	const adminsPing = adminIDs.map(id => '<@' + id + '>').join(' ');
 	shell('git log -1', (err, stdout) => {
 		logger.log(adminsPing,`Logged in as ${client.user.tag}!`);
-		logger.logInner(stdout);
+		logger.log('```' + stdout + '```');
 	});
 });
 

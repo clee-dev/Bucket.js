@@ -156,7 +156,7 @@ const enabled = [
 
         const name = matches[1];
 		const users = Array.from(client.users).map(x => x[1]);
-        const user = users.find(x => x.username.toLowerCase() === name);
+        const user = users.find(x => x.username.toLowerCase() === name.toLowerCase());
         if (!user) return;
 
         const fetch = await message.channel.fetchMessages({ limit: 50 });

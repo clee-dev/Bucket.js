@@ -29,7 +29,7 @@ const {
 	getSilencedState,
 } = require('./util.js');
 const behaviors = require('./behaviors.js');
-const logger = require('./log.js');
+const Logger = require('./log.js');
 
 const client = new Discord.Client();
 let logger;
@@ -42,7 +42,7 @@ admin.initializeApp({
 const db = admin.firestore();
 
 client.on('ready', () => {
-	logger = new logger(client, secrets.logChannels);
+	logger = new Logger(client, secrets.logChannels);
 
 	// '<@id1> <@id2> <@id3>'
 	// 'Logged in as <tag>'

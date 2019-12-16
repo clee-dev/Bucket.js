@@ -29,7 +29,7 @@ const {
 	getSilencedState,
 } = require('./util.js');
 const behaviors = require('./behaviors.js');
-const log = require('./log.js');
+const logging = require('./log.js');
 
 const client = new Discord.Client();
 
@@ -41,18 +41,14 @@ admin.initializeApp({
 const db = admin.firestore();
 
 client.on('ready', () => {
-	log(client, `Logged in as ${client.user.tag}!`);
-
-	const debugChannelIDs = Object.values(secrets.debugChannels);
-	const debugChannels = client.channels.filter(c => debugChannelIDs.includes(c.id));
+	logging.config(client);
 
 	// '<@id1> <@id2> <@id3>'
-	// 'I just restarted!'
+	// 'Logged in as <tag>'
 	const adminIDs = Object.values(secrets.admins);
 	const adminsPing = adminIDs.map(id => '<@' + id + '>').join(' ');
 	const message = adminsPing + '\r\n' + 'I just restarted!';
-	
-	debugChannels.forEach(channel => channel.send(message));
+	logging.log(message + '\r\n' + `Logged in as ${client.user.tag}!`);
 });
 
 client.on('message', msg => {
@@ -66,14 +62,19 @@ async function messageReceived(message) {
 	if (message.author.id === client.user.id) return;
 	if (config.debug && !secrets.debugChannels[message.channel.name]) return;
 
-	log(client, 'MESSAGE', message.author.username + ': ' + message.content, '#' + message.channel)
+	logging.log('MESSAGE', `${message.author.username}: ${message.content}`, message.channel);
 
 	//if I haven't seen this user before, add them to my database
 	db.collection('users')
 		.doc(message.author.id)
 		.set({ name: message.author.username });
 		
-	if (!config.debug && !Object.keys(secrets.logChannels).includes(message.channel.id) && !Object.keys(secrets.debugChannels).includes(message.channel.id)) learn(getWords(message.content));
+	if (
+		!config.debug &&
+		!Object.keys(secrets.logChannels).includes(message.channel.id) &&
+		!Object.keys(secrets.debugChannels).includes(message.channel.id)
+	)
+		learn(getWords(message.content));
 
 	//check if mentioned
 	const mentionBucketRegex = /^bucket[,:].*|.+, ?bucket[.?!]*$/i;
@@ -109,11 +110,13 @@ async function messageReceived(message) {
 	results = results.filter(r => chance(config.chances[r.name] || 100));
 	
 	
-	log(client, 'POTENTIAL RESPONSES', results.map(x => x.name));
+	logging.logInner('POTENTIAL RESPONSES', results.map(x => x.name));
 
 	const final = results.find(r => r.data);
+	logging.logInner('FINAL RESPONSE', final);
 	if (!final) return;
-	log(client, 'FINAL RESPONSE', final.name);
+
+	logging.logInner('FINAL RESPONSE', final.name);
 	await final.action(mentioned ? mentionContext : context, final.data);
 }
 

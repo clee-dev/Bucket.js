@@ -88,7 +88,8 @@ async function messageReceived(message) {
 	const context = {
 		message,
 		db,
-		client
+		client,
+		log: logger.logInner
 	};
 	const mentionContext = {
 		message: {
@@ -96,7 +97,8 @@ async function messageReceived(message) {
 			content: removeMention(message.content)
 		},
 		db,
-		client
+		client,
+		log: logger.logInner
 	};
 
 	const potential = behaviors

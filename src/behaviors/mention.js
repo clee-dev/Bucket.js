@@ -150,13 +150,15 @@ const enabled = [
         }
     }, options),
 
-    new B('mention:remember-quote', async ({ message }) => {
+    new B('mention:remember-quote', async ({ message, log }) => {
         const matches = message.content.match(/^remember ([^\s]+) (.+)/i);
         if (!matches) return;
 
         const name = matches[1];
+        const quote = matches[2];
 		const users = Array.from(client.users).map(x => x[1]);
         const user = users.find(x => x.username.toLowerCase() === name.toLowerCase());
+        log(user.username);
         if (!user) return;
 
         const fetch = await message.channel.fetchMessages({ limit: 50 });
@@ -164,7 +166,8 @@ const enabled = [
             .map(x => x[1])
             .filter(x => x.id !== message.id)
             .filter(x => x.author.id === user.id)
-            .find(x => x.content.toLowerCase().includes(matches[2].toLowerCase()));
+            .find(x => x.content.toLowerCase().includes(quote.toLowerCase()));
+        log(remember.content);
         return remember;
     }, async ({ message, db }, remember) => {
         message.channel.send(`Okay, remembering ${user.username} said ${remember}`);

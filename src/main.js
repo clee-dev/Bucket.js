@@ -90,7 +90,7 @@ async function messageReceived(message) {
 		message,
 		db,
 		client,
-		log: logger.logInner
+		log: (...a) => logger.logInner(...a)
 	};
 	const mentionContext = {
 		message: {
@@ -99,7 +99,7 @@ async function messageReceived(message) {
 		},
 		db,
 		client,
-		log: logger.logInner
+		log: (...a) => logger.logInner(...a)
 	};
 
 	const potential = behaviors

@@ -121,8 +121,6 @@ async function messageReceived(message) {
 	const final = results.find(r => r.data);
 	logger.logInner('FINAL RESPONSE', final && final.name);
 	if (!final) return;
-
-	logger.logInner('FINAL RESPONSE', final.name);
 	await final.action(mentioned ? mentionContext : context, final.data);
 }
 

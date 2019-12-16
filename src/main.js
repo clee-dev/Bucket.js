@@ -62,7 +62,7 @@ async function messageReceived(message) {
 	if (message.author.id === client.user.id) return;
 	if (config.debug && !secrets.debugChannels[message.channel.name]) return;
 
-	logger.log('MESSAGE', `${message.author.username}: ${message.content}`, '#' + message.channel.name);
+	logger.log(`${message.author.username}: ${message.content}`, '#' + message.channel.id);
 
 	//if I haven't seen this user before, add them to my database
 	db.collection('users')

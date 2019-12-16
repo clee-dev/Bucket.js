@@ -11,7 +11,7 @@ module.exports = class Logger {
 
     logInner(...args) {
         console.log(...args);
-        this.postInChannels('>>>' + this.str(args));
+        this.postInChannels('>>> ' + this.str(args));
     }
 
     str(args) {

@@ -150,7 +150,7 @@ const enabled = [
         }
     }, options),
 
-    new B('mention:remember-quote', async ({ message, log }) => {
+    new B('mention:remember-quote', async ({ message, client, log }) => {
         const matches = message.content.match(/^remember ([^\s]+) (.+)/i);
         if (!matches) return;
 

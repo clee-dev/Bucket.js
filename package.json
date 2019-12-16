@@ -4,11 +4,11 @@
 	"description": "Buckety bucket",
 	"main": "main.js",
 	"dependencies": {
-		"bad-words": "^3.0.2",
-		"discord.js": "^11.4.2",
-		"firebase-admin": "^6.3.0",
-		"syllable": "^3.2.0",
-		"uuid": "^3.3.2",
+		"bad-words": "^3.0.3",
+		"discord.js": "^11.5.1",
+		"firebase-admin": "^8.8.0",
+		"syllable": "^4.0.0",
+		"uuid": "^3.3.3",
 		"valid-url": "^1.0.9"
 	},
 	"devDependencies": {},

@@ -34,6 +34,7 @@ const Logger = require('./log.js');
 
 const client = new Discord.Client();
 let logger;
+let mention_regex;
 
 admin.initializeApp({
 	// credential: admin.credential.cert(serviceAccount), //uncomment for local testing
@@ -44,6 +45,9 @@ const db = admin.firestore();
 
 client.on('ready', () => {
 	logger = new Logger(client, secrets.logChannels);
+
+	//TODO: do we need g or m?
+	mention_regex = new RegExp(`^(hey,? *)?bucket[,:]?|(,? *)?bucket[!.?]?$|<@!?${user.id}>`, 'i');
 
 	// '<@id1> <@id2> <@id3>'
 	// 'Logged in as <tag>'
@@ -60,6 +64,8 @@ client.on('message', msg => {
 });
 
 client.login(secrets.bucketToken);
+
+
 
 async function messageReceived(message) {
 	if (!message.guild) return; //no DMs
@@ -81,17 +87,10 @@ async function messageReceived(message) {
 		learn(getWords(message.content));
 
 	//check if mentioned
-	const mentionBucketRegex = /^bucket[,:].*|.+, ?bucket[.?!]*$/i;
-	const mentioned = message.isMentioned(client.user) || mentionBucketRegex.test(message.content);
+	const mentioned = isMentioned(message.content, client.user);
 	const silenced = await getSilencedState(db);
 	
 	const context = {
-		message,
-		db,
-		client,
-		log: (...a) => logger.logInner(...a)
-	};
-	const mentionContext = {
 		message: {
 			...message,
 			content: removeMention(message.content)
@@ -102,15 +101,15 @@ async function messageReceived(message) {
 	};
 
 	const potential = behaviors
-		.filter(b => mentioned && b.mention || !mentioned && b.nonmention)
-		.filter(b => silenced && b.silent || !silenced && !b.silent);
+		.filter(b => mentioned == b.mention)
+		.filter(b => silenced == b.silent);
   
 	let results = [];
 	for (const b of potential) {
 		results.push({
 			name: b.name,
 			action: b.action,
-			data: await b.check(mentioned ? mentionContext : context)
+			data: await b.check(context)
 		});
 	}
 	results = results.filter(r => chance(config.chances[r.name] || 100));
@@ -121,15 +120,7 @@ async function messageReceived(message) {
 	const final = results.find(r => r.data);
 	logger.logInner('FINAL RESPONSE', final && final.name);
 	if (!final) return;
-	await final.action(mentioned ? mentionContext : context, final.data);
-}
-
-function removeMention(content) {
-	// TODO regexify
-	if (content.toLowerCase().startsWith('bucket') || content.startsWith(`<@${client.user.id}>`) || content.startsWith(`<@!${client.user.id}>`))
-		return content.substring(content.indexOf(' ') + 1);
-	else
-		return content.substring(0, content.toLowerCase().lastIndexOf(', bucket'));
+	await final.action(context, final.data);
 }
 
 async function learn(words) {
@@ -143,4 +134,14 @@ async function learn(words) {
 			.doc(words[i + 2]);
 		incrementDocField(docRef, 'count', 1);
 	}
+}
+
+
+
+function isMentioned(message) {
+	return mention_regex.test(message);
+}
+
+function removeMention(message) {
+	return message.replace(mention_regex, '');
 }

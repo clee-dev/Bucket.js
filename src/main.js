@@ -28,6 +28,7 @@ const {
 	chance,
 	getWords,
 	getSilencedState,
+	respondVaguely
 } = require('./util.js');
 const behaviors = require('./behaviors.js');
 const Logger = require('./log.js');
@@ -39,6 +40,7 @@ let mention_regex;
 admin.initializeApp({
 	// credential: admin.credential.cert(serviceAccount), //uncomment for local testing
 	credential: admin.credential.applicationDefault(), //when deployed to GCP - comment for local testing
+	//projectId: 'buckety-bucket', //uncomment for local testing with firebase emulator
 	databaseURL: secrets.dbUrl,
 });
 const db = admin.firestore();
@@ -47,7 +49,7 @@ client.on('ready', () => {
 	logger = new Logger(client, secrets.logChannels);
 
 	//TODO: do we need g or m?
-	mention_regex = new RegExp(`^(hey,? *)?bucket[,:]?|(,? *)?bucket[!.?]?$|<@!?${user.id}>`, 'i');
+	mention_regex = new RegExp(`^(hey,? *)?bucket[,:]?\b|(, *)bucket[!.?]?$|<@!?${client.user.id}>`, 'i');
 
 	// '<@id1> <@id2> <@id3>'
 	// 'Logged in as <tag>'
@@ -101,8 +103,8 @@ async function messageReceived(message) {
 	};
 
 	const potential = behaviors
-		.filter(b => mentioned == b.mention)
-		.filter(b => silenced == b.silent);
+		.filter(b => mentioned === b.mention)
+		.filter(b => silenced === b.silent);
   
 	let results = [];
 	for (const b of potential) {
@@ -119,7 +121,12 @@ async function messageReceived(message) {
 
 	const final = results.find(r => r.data);
 	logger.logInner('FINAL RESPONSE', final && final.name);
-	if (!final) return;
+	if (!final) {
+		if(mentioned) {
+			respondVaguely(message);
+		}
+		return;
+	}
 	await final.action(context, final.data);
 }
 

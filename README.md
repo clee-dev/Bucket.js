@@ -7,4 +7,8 @@ I don't actually know perl, so feel free to help me decipher [the original sourc
 
 ---
 
+discord server for questions, etc here: https://discord.gg/ATnP4rA
+
+---
+
 I still need to write more things here like how to configure secrets.json & config.json, install, & run.

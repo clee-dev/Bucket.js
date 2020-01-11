@@ -40,7 +40,10 @@ let mention_regex;
 admin.initializeApp({
 	// credential: admin.credential.cert(serviceAccount), //uncomment for local testing
 	credential: admin.credential.applicationDefault(), //when deployed to GCP - comment for local testing
-	//projectId: 'buckety-bucket', //uncomment for local testing with firebase emulator
+	//projectId: 'buckety-bucket', 
+	//uncomment line above for local testing with firebase emulator, 
+	//run `firebase emulators:start --only firestore` in one terminal. 
+	//run with FIRESTORE_EMULATOR_HOST=localhost:8080 node src/main.js
 	databaseURL: secrets.dbUrl,
 });
 const db = admin.firestore();

@@ -15,12 +15,17 @@
 	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-const Discord = require('discord.js');
+
+const local = process.argv.find(arg => arg == 'local');
+
+
+const Discord = local ? require('./test/discord.js') : require('discord.js');
 const admin = require('firebase-admin');
 
 const secrets = require('./secrets.json');
 const config = require('./config.json');
-// const serviceAccount = require('./serviceaccount_key.json'); //uncomment for local testing
+//const serviceAccount = require('./serviceaccount_key.json'); //uncomment for local testing
+
 const shell = require('child_process').exec;
 
 const {
@@ -33,12 +38,15 @@ const behaviors = require('./behaviors.js');
 const Logger = require('./log.js');
 
 const client = new Discord.Client();
+console.log(client);
 let logger;
 
+let databaseURL = local ? 'http://localhost:8081' : secrets.dbUrl;
+
 admin.initializeApp({
-	// credential: admin.credential.cert(serviceAccount), //uncomment for local testing
+	//credential: admin.credential.cert(serviceAccount), //uncomment for local testing
 	credential: admin.credential.applicationDefault(), //when deployed to GCP - comment for local testing
-	databaseURL: secrets.dbUrl,
+	databaseURL: databaseURL,
 });
 const db = admin.firestore();
 
@@ -50,7 +58,7 @@ client.on('ready', () => {
 	const adminIDs = Object.values(secrets.admins);
 	const adminsPing = adminIDs.map(id => '<@' + id + '>').join(' ');
 	shell('git log -1', (err, stdout) => {
-		logger.log(adminsPing,`Logged in as ${client.user.tag}!`);
+		logger.log(adminsPing, `Logged in as ${client.user.tag}!`);
 		logger.log('```' + stdout + '```');
 	});
 });
@@ -72,7 +80,7 @@ async function messageReceived(message) {
 	db.collection('users')
 		.doc(message.author.id)
 		.set({ name: message.author.username });
-		
+
 	if (
 		!config.debug &&
 		!Object.keys(secrets.logChannels).includes(message.channel.id) &&
@@ -84,7 +92,7 @@ async function messageReceived(message) {
 	const mentionBucketRegex = /^bucket[,:].*|.+, ?bucket[.?!]*$/i;
 	const mentioned = message.isMentioned(client.user) || mentionBucketRegex.test(message.content);
 	const silenced = await getSilencedState(db);
-	
+
 	const context = {
 		message,
 		db,
@@ -104,7 +112,7 @@ async function messageReceived(message) {
 	const potential = behaviors
 		.filter(b => mentioned && b.mention || !mentioned && b.nonmention)
 		.filter(b => silenced && b.silent || !silenced && !b.silent);
-  
+
 	let results = [];
 	for (const b of potential) {
 		results.push({
@@ -114,8 +122,8 @@ async function messageReceived(message) {
 		});
 	}
 	results = results.filter(r => chance(config.chances[r.name] || 100));
-	
-	
+
+
 	logger.logInner('POTENTIAL RESPONSES', results.map(x => x.name));
 
 	const final = results.find(r => r.data);

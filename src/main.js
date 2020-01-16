@@ -51,7 +51,6 @@ const db = admin.firestore();
 client.on('ready', () => {
 	logger = new Logger(client, secrets.logChannels);
 
-	//TODO: do we need g or m?
 	mention_regex = new RegExp(`^(hey,? *)?bucket[,:]?\b|(, *)bucket[!.?]?$|<@!?${client.user.id}>`, 'i');
 
 	// '<@id1> <@id2> <@id3>'

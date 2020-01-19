@@ -51,12 +51,12 @@ const db = admin.firestore();
 client.on('ready', () => {
 	logger = new Logger(client, secrets.logChannels);
 
-	mention_regex = new RegExp(`^(hey,? *)?bucket[,:]?\b|(, *)bucket[!.?]?$|<@!?${client.user.id}>`, 'i');
+	mention_regex = new RegExp(`^(hey,? *)?bucket[,:]?\\b|(, *)bucket[!.?]?$|<@!?${client.user.id}>`, 'i');
 
 	// '<@id1> <@id2> <@id3>'
 	// 'Logged in as <tag>'
 	const adminIDs = Object.values(secrets.admins);
-	const adminsPing = adminIDs.map(id => '<@' + id + '>').join(' ');
+	const adminsPing = config.debug ? '' : adminIDs.map(id => '<@' + id + '>').join(' ');
 	shell('git log -1', (err, stdout) => {
 		logger.log(adminsPing,`Logged in as ${client.user.tag}!`);
 		logger.log('```' + stdout + '```');
@@ -93,7 +93,7 @@ async function messageReceived(message) {
 	//check if mentioned
 	const mentioned = isMentioned(message.content, client.user);
 	const silenced = await getSilencedState(db);
-	
+
 	const context = {
 		message: {
 			...message,
